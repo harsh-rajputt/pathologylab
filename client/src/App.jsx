@@ -1,11 +1,15 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FlaskConical, BookOpen, Settings, Database, ChevronDown, UserPlus, List } from 'lucide-react';
+import { LayoutDashboard, Users, FlaskConical, BookOpen, Settings, Database, ChevronDown, UserPlus, List, Building2, Network, ClipboardList, FileEdit, MessageSquare, SquarePlus } from 'lucide-react';
 import Dashboard from './pages/Dashboard/Dashboard';
 import PatientRegistration from './pages/Patients/PatientRegistration';
 import PatientList from './pages/Patients/PatientList';
-import Tests from './pages/Tests/Tests';
-import References from './pages/Refrences/References';
+import TestDepartment from './pages/Tests/TestDepartment';
+import TestWings from './pages/Tests/TestWings';
+import TestList from './pages/Tests/TestList';
+import TestEntry from './pages/Tests/TestEntry';
+import ReferenceDoctor from './pages/Refrences/ReferenceDoctor';
+import CollectionCenter from './pages/Refrences/CollectionCenter';
 import ControlCenter from './pages/Control center/ControlCenter';
 import Masters from './pages/Masters/Masters';
 
@@ -15,8 +19,6 @@ const topNavItems = [
 ];
 
 const bottomNavItems = [
-  { name: 'Tests',          path: '/tests',          icon: FlaskConical },
-  { name: 'References',     path: '/references',     icon: BookOpen },
   { name: 'Control Center', path: '/control-center', icon: Settings },
   { name: 'Masters',        path: '/masters',        icon: Database },
 ];
@@ -24,6 +26,18 @@ const bottomNavItems = [
 const patientSubItems = [
   { name: 'Registration',  path: '/patients/register', icon: UserPlus },
   { name: 'Patient List',  path: '/patients/list',     icon: List },
+];
+
+const testSubItems = [
+  { name: 'Department', path: '/tests/department', icon: Building2 },
+  { name: 'Wings',      path: '/tests/wings',      icon: Network },
+  { name: 'Test Lists', path: '/tests/list',       icon: ClipboardList },
+  { name: 'Test Entry', path: '/tests/entry',      icon: FileEdit },
+];
+
+const referenceSubItems = [
+  { name: 'Reference & Doctor', path: '/references/doctor', icon: MessageSquare },
+  { name: 'Collection Center',  path: '/references/collection-center', icon: SquarePlus },
 ];
 
 function NavItem({ item }) {
@@ -46,18 +60,17 @@ function NavItem({ item }) {
   );
 }
 
-function PatientsDropdown() {
+function PatientsDropdown({ isOpen, onToggle }) {
   const location = useLocation();
-  const isPatientsActive = location.pathname.startsWith('/patients');
-  const [open, setOpen] = useState(isPatientsActive);
+  const isActive = location.pathname.startsWith('/patients');
 
   return (
     <div>
       {/* Patients parent button */}
       <button
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={onToggle}
         className={`w-full flex items-center justify-between gap-3 p-3.5 rounded-xl transition-all duration-200 ${
-          isPatientsActive
+          isActive
             ? 'bg-blue-600/10 text-blue-400 font-semibold'
             : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
         }`}
@@ -68,12 +81,12 @@ function PatientsDropdown() {
         </div>
         <ChevronDown
           size={16}
-          className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {/* Dropdown sub-items */}
-      {open && (
+      {isOpen && (
         <div className="ml-4 mt-1 space-y-1 border-l border-slate-700 pl-3">
           {patientSubItems.map((sub) => {
             const SubIcon = sub.icon;
@@ -81,9 +94,113 @@ function PatientsDropdown() {
               <NavLink
                 key={sub.path}
                 to={sub.path}
-                className={({ isActive }) =>
+                className={({ isActive: isSubActive }) =>
                   `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all duration-200 ${
-                    isActive
+                    isSubActive
+                      ? 'bg-blue-600/10 text-blue-400 font-semibold'
+                      : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-200'
+                  }`
+                }
+              >
+                <SubIcon size={16} />
+                <span>{sub.name}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TestsDropdown({ isOpen, onToggle }) {
+  const location = useLocation();
+  const isActive = location.pathname.startsWith('/tests');
+
+  return (
+    <div>
+      {/* Tests parent button */}
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between gap-3 p-3.5 rounded-xl transition-all duration-200 ${
+          isActive
+            ? 'bg-blue-600/10 text-blue-400 font-semibold'
+            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <FlaskConical size={20} />
+          <span>Tests</span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* Dropdown sub-items */}
+      {isOpen && (
+        <div className="ml-4 mt-1 space-y-1 border-l border-slate-700 pl-3">
+          {testSubItems.map((sub) => {
+            const SubIcon = sub.icon;
+            return (
+              <NavLink
+                key={sub.path}
+                to={sub.path}
+                className={({ isActive: isSubActive }) =>
+                  `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all duration-200 ${
+                    isSubActive
+                      ? 'bg-blue-600/10 text-blue-400 font-semibold'
+                      : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-200'
+                  }`
+                }
+              >
+                <SubIcon size={16} />
+                <span>{sub.name}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReferencesDropdown({ isOpen, onToggle }) {
+  const location = useLocation();
+  const isActive = location.pathname.startsWith('/references');
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between gap-3 p-3.5 rounded-xl transition-all duration-200 ${
+          isActive
+            ? 'bg-blue-600/10 text-blue-400 font-semibold'
+            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <BookOpen size={20} />
+          <span>References</span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="ml-4 mt-1 space-y-1 border-l border-slate-700 pl-3">
+          {referenceSubItems.map((sub) => {
+            const SubIcon = sub.icon;
+            return (
+              <NavLink
+                key={sub.path}
+                to={sub.path}
+                className={({ isActive: isSubActive }) =>
+                  `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all duration-200 ${
+                    isSubActive
                       ? 'bg-blue-600/10 text-blue-400 font-semibold'
                       : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-200'
                   }`
@@ -101,6 +218,20 @@ function PatientsDropdown() {
 }
 
 function Sidebar() {
+  const location = useLocation();
+  
+  // Initialize accordion state based on current URL path
+  const [openDropdown, setOpenDropdown] = useState(() => {
+    if (location.pathname.startsWith('/patients')) return 'patients';
+    if (location.pathname.startsWith('/tests')) return 'tests';
+    if (location.pathname.startsWith('/references')) return 'references';
+    return null;
+  });
+
+  const handleToggle = (dropdownName) => {
+    setOpenDropdown((prev) => (prev === dropdownName ? null : dropdownName));
+  };
+
   return (
     <aside className="w-72 bg-slate-900 border-r border-slate-800 text-slate-300 p-6 flex flex-col shadow-2xl z-10 shrink-0">
       {/* Logo */}
@@ -114,7 +245,18 @@ function Sidebar() {
       {/* Nav */}
       <nav className="space-y-1.5 flex-1 text-sm font-medium">
         {topNavItems.map((item) => <NavItem key={item.path} item={item} />)}
-        <PatientsDropdown />
+        <PatientsDropdown 
+          isOpen={openDropdown === 'patients'} 
+          onToggle={() => handleToggle('patients')} 
+        />
+        <TestsDropdown 
+          isOpen={openDropdown === 'tests'} 
+          onToggle={() => handleToggle('tests')} 
+        />
+        <ReferencesDropdown 
+          isOpen={openDropdown === 'references'} 
+          onToggle={() => handleToggle('references')} 
+        />
         {bottomNavItems.map((item) => <NavItem key={item.path} item={item} />)}
       </nav>
 
@@ -135,8 +277,12 @@ function Layout() {
           <Route path="/"                  element={<Dashboard />} />
           <Route path="/patients/register" element={<PatientRegistration />} />
           <Route path="/patients/list"     element={<PatientList />} />
-          <Route path="/tests"             element={<Tests />} />
-          <Route path="/references"        element={<References />} />
+          <Route path="/tests/department"  element={<TestDepartment />} />
+          <Route path="/tests/wings"       element={<TestWings />} />
+          <Route path="/tests/list"        element={<TestList />} />
+          <Route path="/tests/entry"       element={<TestEntry />} />
+          <Route path="/references/doctor" element={<ReferenceDoctor />} />
+          <Route path="/references/collection-center" element={<CollectionCenter />} />
           <Route path="/control-center"    element={<ControlCenter />} />
           <Route path="/masters"           element={<Masters />} />
         </Routes>
