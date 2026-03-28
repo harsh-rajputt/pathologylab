@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FlaskConical, BookOpen, Settings, Database, ChevronDown, UserPlus, List, Building2, Network, ClipboardList, FileEdit, MessageSquare, SquarePlus } from 'lucide-react';
+import { LayoutDashboard, Users, FlaskConical, BookOpen, Settings, Database, ChevronDown, UserPlus, List, Building2, Network, ClipboardList, FileEdit, MessageSquare, SquarePlus, User, Globe, Pin, Gamepad2, Clock, UserCog } from 'lucide-react';
 import Dashboard from './pages/Dashboard/Dashboard';
 import PatientRegistration from './pages/Patients/PatientRegistration';
 import PatientList from './pages/Patients/PatientList';
@@ -10,7 +10,14 @@ import TestList from './pages/Tests/TestList';
 import TestEntry from './pages/Tests/TestEntry';
 import ReferenceDoctor from './pages/Refrences/ReferenceDoctor';
 import CollectionCenter from './pages/Refrences/CollectionCenter';
-import ControlCenter from './pages/Control center/ControlCenter';
+import Profile from './pages/Control center/Profile';
+import SmsEmail from './pages/Control center/SmsEmail';
+import MenuPermission from './pages/Control center/MenuPermission';
+import UserAccount from './pages/Control center/UserAccount';
+import PageSetup from './pages/Control center/PageSetup';
+import DatabaseServices from './pages/Control center/DatabaseServices';
+import UserLog from './pages/Control center/UserLog';
+import UserRole from './pages/Control center/UserRole';
 import Masters from './pages/Masters/Masters';
 
 // Top-level nav items (non-dropdown)
@@ -19,7 +26,6 @@ const topNavItems = [
 ];
 
 const bottomNavItems = [
-  { name: 'Control Center', path: '/control-center', icon: Settings },
   { name: 'Masters',        path: '/masters',        icon: Database },
 ];
 
@@ -38,6 +44,17 @@ const testSubItems = [
 const referenceSubItems = [
   { name: 'Reference & Doctor', path: '/references/doctor', icon: MessageSquare },
   { name: 'Collection Center',  path: '/references/collection-center', icon: SquarePlus },
+];
+
+const controlCenterSubItems = [
+  { name: 'Profile',           path: '/control-center/profile',           icon: User },
+  { name: 'SMS & Email',       path: '/control-center/sms-email',         icon: Globe },
+  { name: 'Menu Permission',   path: '/control-center/menu-permission',   icon: Pin },
+  { name: 'User Account',      path: '/control-center/user-account',      icon: Users },
+  { name: 'Page Setup',        path: '/control-center/page-setup',        icon: Gamepad2 },
+  { name: 'Database Services', path: '/control-center/database-services', icon: Database },
+  { name: 'User Log',          path: '/control-center/user-log',          icon: Clock },
+  { name: 'User Role',         path: '/control-center/user-role',         icon: UserCog },
 ];
 
 function NavItem({ item }) {
@@ -217,6 +234,57 @@ function ReferencesDropdown({ isOpen, onToggle }) {
   );
 }
 
+function ControlCenterDropdown({ isOpen, onToggle }) {
+  const location = useLocation();
+  const isActive = location.pathname.startsWith('/control-center');
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className={`w-full flex items-center justify-between gap-3 p-3.5 rounded-xl transition-all duration-200 ${
+          isActive
+            ? 'bg-blue-600/10 text-blue-400 font-semibold'
+            : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <Settings size={20} />
+          <span>Control Center</span>
+        </div>
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="ml-4 mt-1 space-y-1 border-l border-slate-700 pl-3">
+          {controlCenterSubItems.map((sub) => {
+            const SubIcon = sub.icon;
+            return (
+              <NavLink
+                key={sub.path}
+                to={sub.path}
+                className={({ isActive: isSubActive }) =>
+                  `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs transition-all duration-200 ${
+                    isSubActive
+                      ? 'bg-blue-600/10 text-blue-400 font-semibold'
+                      : 'text-slate-500 hover:bg-slate-800/50 hover:text-slate-200'
+                  }`
+                }
+              >
+                <SubIcon size={16} />
+                <span>{sub.name}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Sidebar() {
   const location = useLocation();
   
@@ -225,6 +293,7 @@ function Sidebar() {
     if (location.pathname.startsWith('/patients')) return 'patients';
     if (location.pathname.startsWith('/tests')) return 'tests';
     if (location.pathname.startsWith('/references')) return 'references';
+    if (location.pathname.startsWith('/control-center')) return 'control-center';
     return null;
   });
 
@@ -243,7 +312,13 @@ function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="space-y-1.5 flex-1 text-sm font-medium">
+      <nav className="space-y-1.5 flex-1 text-sm font-medium overflow-y-auto pr-2 pb-4 
+        [&::-webkit-scrollbar]:w-1.5
+        [&::-webkit-scrollbar-track]:bg-transparent
+        [&::-webkit-scrollbar-thumb]:bg-slate-700
+        [&::-webkit-scrollbar-thumb]:rounded-full
+        hover:[&::-webkit-scrollbar-thumb]:bg-slate-600"
+      >
         {topNavItems.map((item) => <NavItem key={item.path} item={item} />)}
         <PatientsDropdown 
           isOpen={openDropdown === 'patients'} 
@@ -256,6 +331,10 @@ function Sidebar() {
         <ReferencesDropdown 
           isOpen={openDropdown === 'references'} 
           onToggle={() => handleToggle('references')} 
+        />
+        <ControlCenterDropdown 
+          isOpen={openDropdown === 'control-center'} 
+          onToggle={() => handleToggle('control-center')} 
         />
         {bottomNavItems.map((item) => <NavItem key={item.path} item={item} />)}
       </nav>
@@ -283,8 +362,15 @@ function Layout() {
           <Route path="/tests/entry"       element={<TestEntry />} />
           <Route path="/references/doctor" element={<ReferenceDoctor />} />
           <Route path="/references/collection-center" element={<CollectionCenter />} />
-          <Route path="/control-center"    element={<ControlCenter />} />
-          <Route path="/masters"           element={<Masters />} />
+          <Route path="/control-center/profile"           element={<Profile />} />
+          <Route path="/control-center/sms-email"         element={<SmsEmail />} />
+          <Route path="/control-center/menu-permission"   element={<MenuPermission />} />
+          <Route path="/control-center/user-account"      element={<UserAccount />} />
+          <Route path="/control-center/page-setup"        element={<PageSetup />} />
+          <Route path="/control-center/database-services" element={<DatabaseServices />} />
+          <Route path="/control-center/user-log"          element={<UserLog />} />
+          <Route path="/control-center/user-role"         element={<UserRole />} />
+          <Route path="/masters"                          element={<Masters />} />
         </Routes>
       </main>
     </div>
