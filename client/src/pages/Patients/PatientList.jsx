@@ -15,11 +15,18 @@ export default function PatientList() {
     });
 
     useEffect(() => {
-        // Load from localStorage on mount
-        const data = JSON.parse(localStorage.getItem('patients') || '[]');
-        // Sort descending by created date
-        const sorted = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-        setPatients(sorted);
+        const fetchPatients = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/patients');
+                const data = await res.json();
+                if (data.success) {
+                    setPatients(data.patients);
+                }
+            } catch (error) {
+                console.error("Failed to load patients:", error);
+            }
+        };
+        fetchPatients();
     }, []);
 
     const handleFilterChange = (e) => {
@@ -183,10 +190,10 @@ export default function PatientList() {
                                     const discountValue = getDiscountAmount(patient);
 
                                     return (
-                                        <tr key={patient.id} className="hover:bg-purple-50/50 transition-colors text-sm text-slate-700">
+                                        <tr key={patient._id || patient.id} className="hover:bg-purple-50/50 transition-colors text-sm text-slate-700">
                                             <td className="px-4 py-2.5">
                                                 <span className="inline-block px-2.5 py-1 bg-blue-600 text-white text-xs font-mono font-medium rounded shadow-sm">
-                                                    {patient.id}
+                                                    {patient.labId || patient.id}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-2.5 text-slate-600 font-medium">

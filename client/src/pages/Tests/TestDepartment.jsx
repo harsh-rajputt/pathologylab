@@ -1,43 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Edit2, Trash2, List as ListIcon, Building2, Search, Save, AlertCircle } from 'lucide-react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
-const initialData = [
-    { id: 1, name: "HAEMATOLOGY", orderNo: 0, wing: "PATHOLOGY" },
-    { id: 2, name: "CITY SCAN", orderNo: 0, wing: "CT SCAN" },
-    { id: 3, name: "cardiology", orderNo: 0, wing: "ECG" },
-    { id: 4, name: "RADIOLOGY", orderNo: 0, wing: "df" },
-    { id: 5, name: "USG", orderNo: 0, wing: "df" },
-    { id: 6, name: "PATHOLOGY", orderNo: 0, wing: "PATHOLOGY" },
-    { id: 7, name: "OTHERS", orderNo: 0, wing: "-" },
-    { id: 8, name: "X - RAY", orderNo: 1, wing: "-" },
-    { id: 9, name: "RADIOLOGY 1", orderNo: 2, wing: "-" },
-    { id: 10, name: "BIOCHEMESTRY", orderNo: 2, wing: "PATHOLOGY" },
-    { id: 11, name: "HORMONAL EXAMINATION", orderNo: 3, wing: "PATHOLOGY" },
-    { id: 12, name: "MRI", orderNo: 3, wing: "-" },
-];
-
 export default function TestDepartment() {
-    const [departments, setDepartments] = useState(initialData);
+    const [departments, setDepartments] = useState([]);
     const [formData, setFormData] = useState({ id: null, name: '', orderNo: '0', wing: '', comment: '' });
     const [isEditing, setIsEditing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [wingsList, setWingsList] = useState(["Select Wing"]);
 
-    const wingsList = ["Select Wing", "PATHOLOGY", "CT SCAN", "ECG", "MRI", "X-RAY", "df"];
+    useEffect(() => {
+        fetchDepartments();
+        fetchWings();
+    }, []);
 
-    const handleSave = (e) => {
+    const fetchDepartments = async () => {
+        try {
+            const res = await fetch('http://localhost:5000/api/departments');
+            const data = await res.json();
+            if (data.success) setDepartments(data.departments);
+        } catch (error) {
+            console.error("Failed to fetch departments", error);
+        }
+    };
+
+    const fetchWings = async () => {
+        try {
+            const res = await fetch('http://localhost:5000/api/wings');
+            const data = await res.json();
+            if (data.success) {
+                const dynamicWings = data.wings.map(w => w.name);
+                setWingsList(["Select Wing", ...dynamicWings]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch wings", error);
+        }
+    };
+
+    const handleSave = async (e) => {
         e.preventDefault();
         if (!formData.name) return;
 
         if (isEditing) {
+            // Can be wired up to a PUT request later
             setDepartments(departments.map(dept => 
-                dept.id === formData.id ? { ...dept, name: formData.name, orderNo: parseInt(formData.orderNo) || 0, wing: formData.wing === "Select Wing" ? "-" : formData.wing } : dept
+                dept._id === formData.id ? { ...dept, name: formData.name, orderNo: parseInt(formData.orderNo) || 0, wing: formData.wing === "Select Wing" ? "-" : formData.wing } : dept
             ));
         } else {
-            const newId = departments.length > 0 ? Math.max(...departments.map(d => d.id)) + 1 : 1;
-            setDepartments([{ id: newId, name: formData.name, orderNo: parseInt(formData.orderNo) || 0, wing: formData.wing === "Select Wing" ? "-" : formData.wing }, ...departments]);
+            try {
+                const res = await fetch('http://localhost:5000/api/departments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: formData.name,
+                        orderNo: parseInt(formData.orderNo) || 0,
+                        wing: formData.wing === "Select Wing" ? "-" : formData.wing,
+                        comment: formData.comment
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    setDepartments([data.department, ...departments]);
+                } else {
+                    alert(data.error);
+                }
+            } catch (error) {
+                console.error("Save Error:", error);
+            }
         }
         
         // Reset form
@@ -46,13 +77,21 @@ export default function TestDepartment() {
     };
 
     const handleEdit = (dept) => {
-        setFormData({ id: dept.id, name: dept.name, orderNo: dept.orderNo.toString(), wing: dept.wing === "-" ? "Select Wing" : dept.wing, comment: '' });
+        setFormData({ id: dept._id || dept.id, name: dept.name, orderNo: dept.orderNo.toString(), wing: dept.wing === "-" ? "Select Wing" : dept.wing, comment: dept.comment || '' });
         setIsEditing(true);
     };
 
-    const handleDelete = (id) => {
-        if(window.confirm("Are you sure you want to delete this department?")) {
-            setDepartments(departments.filter(dept => dept.id !== id));
+    const handleDelete = async (id) => {
+        if(window.confirm("Are you sure you want to permanently delete this department from the database?")) {
+            try {
+                const res = await fetch(`http://localhost:5000/api/departments/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    setDepartments(departments.filter(dept => (dept._id || dept.id) !== id));
+                }
+            } catch (error) {
+                console.error("Delete Error:", error);
+            }
         }
     };
 
@@ -210,24 +249,24 @@ export default function TestDepartment() {
                                     ) : (
                                         filteredDepartments.map((dept) => (
                                             <motion.tr 
-                                                key={dept.id}
+                                                key={dept._id || dept.id}
                                                 layout
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
                                                 exit={{ opacity: 0, scale: 0.95 }}
-                                                className={`border-b border-slate-100 hover:bg-fuchsia-50/30 transition-colors group ${isEditing && formData.id === dept.id ? 'bg-fuchsia-50' : ''}`}
+                                                className={`border-b border-slate-100 hover:bg-fuchsia-50/30 transition-colors group ${isEditing && formData.id === (dept._id || dept.id) ? 'bg-fuchsia-50' : ''}`}
                                             >
                                                 <td className="py-3 px-6">
                                                     <div className="flex items-center gap-2">
                                                         <button 
                                                             onClick={() => handleEdit(dept)}
-                                                            className={`p-1.5 rounded-md transition-colors ${isEditing && formData.id === dept.id ? 'bg-fuchsia-600 text-white' : 'text-slate-400 hover:text-fuchsia-600 hover:bg-fuchsia-50'}`}
+                                                            className={`p-1.5 rounded-md transition-colors ${isEditing && formData.id === (dept._id || dept.id) ? 'bg-fuchsia-600 text-white' : 'text-slate-400 hover:text-fuchsia-600 hover:bg-fuchsia-50'}`}
                                                             title="Edit"
                                                         >
                                                             <Edit2 size={16} strokeWidth={2.5} />
                                                         </button>
                                                         <button 
-                                                            onClick={() => handleDelete(dept.id)}
+                                                            onClick={() => handleDelete(dept._id || dept.id)}
                                                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
                                                             title="Delete"
                                                         >

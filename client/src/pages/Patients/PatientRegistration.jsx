@@ -98,24 +98,41 @@ export default function PatientRegistration() {
     const payableAmount = Math.max(0, totalAmount - discountAmount);
     const dues = Math.max(0, payableAmount - (Number(amountDetails.received) || 0));
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
-        const newPatient = {
+        const payload = {
             id: "LAB-" + Math.floor(10000 + Math.random() * 90000), // Random ID like LAB-12345
             ...formData,
             tests: selectedTests,
             amounts: { ...amountDetails, totalAmount, payableAmount, dues },
-            status: 'New', 
-            createdAt: new Date().toISOString()
+            status: 'New'
         };
 
-        const existingPatients = JSON.parse(localStorage.getItem('patients') || '[]');
-        localStorage.setItem('patients', JSON.stringify([newPatient, ...existingPatients]));
-
-        console.log("Submitting:", newPatient);
-        setIsSubmitted(true);
-        setTimeout(() => setIsSubmitted(false), 3000);
+        try {
+            const res = await fetch('http://localhost:5000/api/patients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                console.log("Registered:", data.patient);
+                setIsSubmitted(true);
+                setTimeout(() => setIsSubmitted(false), 3000);
+                
+                // Clear Form automatically (optional but good practice)
+                setSelectedTests([]);
+                setFormData(prev => ({...prev, fullName: '', age: '', mobileNo: '', weight: '', remarks: ''}));
+                setAmountDetails(prev => ({...prev, received: '', transactionId: '', discount: ''}));
+            } else {
+                alert(data.error);
+            }
+        } catch (err) {
+            console.error("Save Error:", err);
+            alert("Failed to connect to backend server");
+        }
     };
 
     // Animation variants
