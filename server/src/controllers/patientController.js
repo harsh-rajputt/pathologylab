@@ -48,3 +48,40 @@ exports.deletePatient = async (req, res) => {
         res.status(400).json({ success: false, error: "Failed to delete patient" });
     }
 };
+
+exports.updatePatient = async (req, res) => {
+    try {
+        const updatedPatient = await Patient.findByIdAndUpdate(
+            req.params.id,
+            {
+                $set: {
+                    prefix: req.body.prefix,
+                    fullName: req.body.fullName,
+                    age: req.body.age,
+                    ageUnit: req.body.ageUnit,
+                    gender: req.body.gender,
+                    mobileNo: req.body.mobileNo,
+                    weight: req.body.weight,
+                    reportingDate: req.body.reportingDate,
+                    reportingTime: req.body.reportingTime,
+                    referBy: req.body.referBy,
+                    sampleType: req.body.sampleType,
+                    remarks: req.body.remarks,
+                    tests: req.body.tests,
+                    amounts: req.body.amounts,
+                    status: req.body.status
+                }
+            },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedPatient) {
+            return res.status(404).json({ success: false, error: "Patient not found." });
+        }
+
+        res.status(200).json({ success: true, patient: updatedPatient });
+    } catch (error) {
+        console.error("Patient Update Error:", error);
+        res.status(400).json({ success: false, error: "Failed to update patient." });
+    }
+};

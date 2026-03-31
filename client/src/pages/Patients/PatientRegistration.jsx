@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     User, Calendar, Clock, Activity, FileText, 
@@ -25,6 +26,8 @@ const SAMPLE_TYPES = [
 ];
 
 export default function PatientRegistration() {
+    const navigate = useNavigate();
+    const location = useLocation();
     const defaultDate = new Date().toISOString().split('T')[0];
     const defaultTime = new Date().toTimeString().slice(0, 5);
 
@@ -46,6 +49,10 @@ export default function PatientRegistration() {
     const [selectedTests, setSelectedTests] = useState([]);
     const [currentTest, setCurrentTest] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
+    
+    // Edit mode tracking
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editId, setEditId] = useState(null);
 
     // Amount Details State
     const [amountDetails, setAmountDetails] = useState({
@@ -56,6 +63,37 @@ export default function PatientRegistration() {
         received: '',
         transactionId: ''
     });
+
+    useEffect(() => {
+        if (location.state?.editPatient) {
+            const patient = location.state.editPatient;
+            setFormData({
+                prefix: patient.prefix || 'Mr.',
+                fullName: patient.fullName || '',
+                age: patient.age || '',
+                ageUnit: patient.ageUnit || 'Years',
+                gender: patient.gender || 'Male',
+                mobileNo: patient.mobileNo || '',
+                weight: patient.weight || '',
+                reportingDate: patient.reportingDate || defaultDate,
+                reportingTime: patient.reportingTime || defaultTime,
+                referBy: patient.referBy || 'Self',
+                sampleType: patient.sampleType || 'Blood',
+                remarks: patient.remarks || ''
+            });
+            setSelectedTests(patient.tests || []);
+            setAmountDetails({
+                discount: patient.amounts?.discount || '',
+                discountType: patient.amounts?.discountType || '₹',
+                discountBy: patient.amounts?.discountBy || 'Self',
+                payMode: patient.amounts?.payMode || 'Cash',
+                received: patient.amounts?.received || '',
+                transactionId: patient.amounts?.transactionId || ''
+            });
+            setIsEditMode(true);
+            setEditId(patient._id);
+        }
+    }, [location.state, defaultDate, defaultTime]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -102,30 +140,38 @@ export default function PatientRegistration() {
         e.preventDefault();
         
         const payload = {
-            id: "LAB-" + Math.floor(10000 + Math.random() * 90000), // Random ID like LAB-12345
             ...formData,
             tests: selectedTests,
             amounts: { ...amountDetails, totalAmount, payableAmount, dues },
             status: 'New'
         };
 
+        if (!isEditMode) {
+            payload.id = "LAB-" + Math.floor(10000 + Math.random() * 90000); // Random ID like LAB-12345
+        }
+
         try {
-            const res = await fetch('http://localhost:5000/api/patients', {
-                method: 'POST',
+            const endpoint = isEditMode ? `http://localhost:5000/api/patients/${editId}` : 'http://localhost:5000/api/patients';
+            const methodType = isEditMode ? 'PUT' : 'POST';
+
+            const res = await fetch(endpoint, {
+                method: methodType,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             const data = await res.json();
             
             if (data.success) {
-                console.log("Registered:", data.patient);
+                console.log(isEditMode ? "Updated:" : "Registered:", data.patient);
                 setIsSubmitted(true);
                 setTimeout(() => setIsSubmitted(false), 3000);
                 
-                // Clear Form automatically (optional but good practice)
-                setSelectedTests([]);
-                setFormData(prev => ({...prev, fullName: '', age: '', mobileNo: '', weight: '', remarks: ''}));
-                setAmountDetails(prev => ({...prev, received: '', transactionId: '', discount: ''}));
+                if (!isEditMode) {
+                    // Clear Form automatically (optional but good practice)
+                    setSelectedTests([]);
+                    setFormData(prev => ({...prev, fullName: '', age: '', mobileNo: '', weight: '', remarks: ''}));
+                    setAmountDetails(prev => ({...prev, received: '', transactionId: '', discount: ''}));
+                }
             } else {
                 alert(data.error);
             }
@@ -159,7 +205,7 @@ export default function PatientRegistration() {
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
                             <UserPlus className="h-8 w-8 text-indigo-600" />
-                            New Patient Registration
+                            {isEditMode ? "Edit Patient Registration" : "New Patient Registration"}
                         </h1>
                         <p className="mt-2 text-sm text-slate-500">
                             Enter patient details, select investigations, and manage billing.
@@ -611,6 +657,7 @@ export default function PatientRegistration() {
 
                         <button 
                             type="button"
+                            onClick={() => navigate('/patients/list')}
                             className="p-2.5 text-slate-500 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
                             title="List All"
                         >
@@ -630,7 +677,7 @@ export default function PatientRegistration() {
                             className="px-8 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                         >
                             <Save className="w-5 h-5" />
-                            Save Registration
+                            {isEditMode ? "Update Registration" : "Save Registration"}
                         </button>
                     </motion.div>
                 </form>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, FlaskConical, BookOpen, Settings, Database, ChevronDown, UserPlus, List, Building2, Network, ClipboardList, FileEdit, MessageSquare, SquarePlus, User, Globe, Pin, Gamepad2, Clock, UserCog } from 'lucide-react';
+import { LayoutDashboard, Users, FlaskConical, BookOpen, Settings, Database, ChevronDown, UserPlus, List, Building2, Network, ClipboardList, FileEdit, MessageSquare, SquarePlus, User, Globe, Pin, Gamepad2, Clock, UserCog, Layers, Boxes, ListChecks } from 'lucide-react';
 import Dashboard from './pages/Dashboard/Dashboard';
 import PatientRegistration from './pages/Patients/PatientRegistration';
 import PatientList from './pages/Patients/PatientList';
@@ -8,6 +8,9 @@ import TestDepartment from './pages/Tests/TestDepartment';
 import TestWings from './pages/Tests/TestWings';
 import TestList from './pages/Tests/TestList';
 import TestEntry from './pages/Tests/TestEntry';
+import TestUnit from './pages/Tests/TestUnit';
+import MultiTestSetting from './pages/Tests/MultiTestSetting';
+import ProfileSetting from './pages/Tests/ProfileSetting';
 import ReferenceDoctor from './pages/Refrences/ReferenceDoctor';
 import CollectionCenter from './pages/Refrences/CollectionCenter';
 import Profile from './pages/Control center/Profile';
@@ -39,6 +42,9 @@ const testSubItems = [
   { name: 'Wings',      path: '/tests/wings',      icon: Network },
   { name: 'Test Lists', path: '/tests/list',       icon: ClipboardList },
   { name: 'Test Entry', path: '/tests/entry',      icon: FileEdit },
+  { name: 'Test Unit',  path: '/tests/unit',       icon: Layers },
+  { name: 'Multi Test', path: '/tests/multi-test', icon: Boxes },
+  { name: 'Profile Setting', path: '/tests/profile', icon: ListChecks },
 ];
 
 const referenceSubItems = [
@@ -360,6 +366,9 @@ function Layout() {
           <Route path="/tests/wings"       element={<TestWings />} />
           <Route path="/tests/list"        element={<TestList />} />
           <Route path="/tests/entry"       element={<TestEntry />} />
+          <Route path="/tests/unit"        element={<TestUnit />} />
+          <Route path="/tests/multi-test"  element={<MultiTestSetting />} />
+          <Route path="/tests/profile"     element={<ProfileSetting />} />
           <Route path="/references/doctor" element={<ReferenceDoctor />} />
           <Route path="/references/collection-center" element={<CollectionCenter />} />
           <Route path="/control-center/profile"           element={<Profile />} />

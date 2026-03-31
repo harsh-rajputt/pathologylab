@@ -22,6 +22,8 @@ mongoose.connect(MONGODB_URI)
 const wingRoutes = require('./src/routes/testWingRoutes');
 const departmentRoutes = require('./src/routes/testDepartmentRoutes');
 const patientRoutes = require('./src/routes/patientRoutes');
+const testUnitRoutes = require('./src/routes/testUnitRoutes');
+const testRoutes = require('./src/routes/testRoutes');
 
 // Basic Architecture Route
 app.get('/api/health', (req, res) => {
@@ -32,6 +34,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/wings', wingRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/patients', patientRoutes);
+app.use('/api/test-units', testUnitRoutes);
+app.use('/api/tests', testRoutes);
 
 // Start the Backend Node Server
 app.listen(PORT, () => {

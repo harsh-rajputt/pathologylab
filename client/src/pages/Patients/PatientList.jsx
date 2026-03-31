@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Calendar, Search, Filter,
-    FileText, User, Printer, Eye, Play
+    FileText, User, Printer, Eye, Play, X
 } from 'lucide-react';
 
 export default function PatientList() {
+    const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
+    const [selectedPatient, setSelectedPatient] = useState(null);
     const [filters, setFilters] = useState({
         fromDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
         uptoDate: new Date().toISOString().split('T')[0],
@@ -190,7 +193,11 @@ export default function PatientList() {
                                     const discountValue = getDiscountAmount(patient);
 
                                     return (
-                                        <tr key={patient._id || patient.id} className="hover:bg-purple-50/50 transition-colors text-sm text-slate-700">
+                                        <tr 
+                                            key={patient._id || patient.id} 
+                                            onClick={() => setSelectedPatient(patient)}
+                                            className="hover:bg-purple-50/50 transition-colors text-sm text-slate-700 cursor-pointer"
+                                        >
                                             <td className="px-4 py-2.5">
                                                 <span className="inline-block px-2.5 py-1 bg-blue-600 text-white text-xs font-mono font-medium rounded shadow-sm">
                                                     {patient.labId || patient.id}
@@ -240,6 +247,63 @@ export default function PatientList() {
                     </table>
                 </div>
             </motion.div>
+
+            {/* Patient Action Modal Overlay */}
+            <AnimatePresence>
+                {selectedPatient && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="bg-white shadow-2xl rounded-xl w-full max-w-sm overflow-hidden border border-slate-200"
+                        >
+                            {/* Header (Red Theme) */}
+                            <div className="bg-red-600 text-white px-4 py-3 flex items-center justify-between shadow-sm">
+                                <h3 className="font-semibold text-lg tracking-wide">Select Option</h3>
+                                <button 
+                                    onClick={() => setSelectedPatient(null)}
+                                    className="p-1 hover:bg-red-700 rounded-md transition-colors"
+                                    title="Close"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            
+                            {/* Body */}
+                            <div className="p-5 space-y-3.5 bg-slate-50/50">
+                                {/* Lab ID Display - Target Red Input aesthetic from request */}
+                                <div className="border border-red-500 bg-white rounded flex items-center justify-start p-2 shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
+                                    <span className="text-slate-800 font-medium tracking-wide">{selectedPatient.labId || selectedPatient.id}</span>
+                                </div>
+                                
+                                <button className="w-full py-2.5 bg-[#e5e7eb] hover:bg-[#d1d5db] text-slate-700 font-medium rounded transition-colors shadow-sm">
+                                    Barcode
+                                </button>
+                                
+                                <button 
+                                    onClick={() => navigate('/patients/register', { state: { editPatient: selectedPatient } })}
+                                    className="w-full py-2.5 bg-[#3b82f6] hover:bg-[#2563eb] text-white font-medium rounded transition-colors shadow-sm"
+                                >
+                                    Edit Registration
+                                </button>
+                                
+                                <button className="w-full py-2.5 bg-[#4b5563] hover:bg-[#374151] text-white font-medium rounded transition-colors shadow-sm">
+                                    Print Receipt
+                                </button>
+                                
+                                <button className="w-full py-2.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium rounded transition-colors shadow-sm">
+                                    Result Entry
+                                </button>
+                                
+                                <button className="w-full py-2.5 bg-[#ef4444] hover:bg-[#dc2626] text-white font-medium rounded transition-colors shadow-sm">
+                                    Amount ₹{Number(selectedPatient.amounts?.dues || 0)} Dues
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
