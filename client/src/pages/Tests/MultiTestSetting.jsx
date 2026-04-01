@@ -1,126 +1,334 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Boxes, Save, RefreshCw, Layers } from 'lucide-react';
+import { Save, Plus, X, Search, ChevronRight, Activity, Edit2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 
-export default function MultiTestSetting() {
-    const { showNotification } = useApp();
-    const [selectedDepartment, setSelectedDepartment] = useState('');
-    const [groupName, setGroupName] = useState('');
-    
-    const [tests, setTests] = useState([]);
-    const [selectedTests, setSelectedTests] = useState([]);
+const OrderInput = ({ currentIndex, max, onReorder }) => {
+    const [val, setVal] = useState(currentIndex + 1);
 
     useEffect(() => {
-        fetch('http://localhost:5000/api/tests')
-            .then(res => res.json())
-            .then(data => { if(data.success) setTests(data.tests); })
-            .catch(err => console.error(err));
-    }, []);
+        setVal(currentIndex + 1);
+    }, [currentIndex]);
 
-    const parentTests = tests.filter(t => t.testFormat === 'Multiple');
-    const childTests = tests.filter(t => t.testFormat === 'Single');
-
-    const toggleTest = (testId) => {
-        if (selectedTests.includes(testId)) {
-            setSelectedTests(selectedTests.filter(id => id !== testId));
-        } else {
-            setSelectedTests([...selectedTests, testId]);
+    const handleBlur = () => {
+        let num = parseInt(val);
+        if (isNaN(num) || num < 1) num = 1;
+        if (num > max) num = max;
+        setVal(num);
+        if (num - 1 !== currentIndex) {
+            onReorder(currentIndex, num - 1);
         }
     };
 
-    const handleSave = (e) => {
-        e.preventDefault();
-        showNotification("Multi Test group configured successfully!", "success");
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            e.target.blur();
+        }
     };
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 min-h-screen bg-slate-50/50">
-            {/* Header Title */}
-            <header className="mb-6">
-                <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-                        <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl shadow-sm">
-                            <Boxes size={24} strokeWidth={2.5} />
-                        </div>
-                        Multi Test Parameter Mapping
-                    </h1>
-                    <p className="text-slate-500 mt-2 font-medium">Group individual parameters into multi-line testing batches.</p>
-                </motion.div>
-            </header>
+        <input 
+            type="number"
+            min="1"
+            max={max}
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="w-12 text-center text-sm font-bold border border-slate-300 rounded bg-slate-50 focus:ring-1 focus:ring-red-500 outline-none hover:bg-slate-100 py-0.5"
+            title="Type Position and Press Enter or Click Away"
+        />
+    );
+};
 
+export default function MultiTestSetting() {
+    const { showNotification } = useApp();
+    const navigate = useNavigate();
+    const [tests, setTests] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    
+    // UI State
+    const [activeParentId, setActiveParentId] = useState(null);
+    const [searchLeft, setSearchLeft] = useState('');
+    const [searchMiddle, setSearchMiddle] = useState('');
+
+    useEffect(() => {
+        fetchTests();
+    }, []);
+
+    const fetchTests = async () => {
+        setIsLoading(true);
+        try {
+            const res = await fetch('http://localhost:5000/api/tests');
+            const data = await res.json();
+            if (data.success) {
+                // Ensure all tests have a childTests array initialized to prevent null errors
+                const formattedTests = data.tests.map(t => ({
+                    ...t,
+                    childTests: t.childTests || []
+                }));
+                setTests(formattedTests);
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification("Failed to fetch test lists.", "error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleAddChild = (childId) => {
+        if (!activeParentId) return;
+        setTests(prev => prev.map(test => {
+            if (test._id === activeParentId) {
+                if (!test.childTests.includes(childId)) {
+                    return { ...test, childTests: [...test.childTests, childId] };
+                }
+            }
+            return test;
+        }));
+    };
+
+    const handleRemoveChild = (childId) => {
+        if (!activeParentId) return;
+        setTests(prev => prev.map(test => {
+            if (test._id === activeParentId) {
+                return { ...test, childTests: test.childTests.filter(id => id !== childId) };
+            }
+            return test;
+        }));
+    };
+
+    const handleReorderChild = (currentIndex, newIndex) => {
+        if (!activeParentId || currentIndex === newIndex) return;
+        setTests(prev => prev.map(test => {
+            if (test._id === activeParentId) {
+                const newChildren = [...test.childTests];
+                const [movedItem] = newChildren.splice(currentIndex, 1);
+                newChildren.splice(newIndex, 0, movedItem);
+                return { ...test, childTests: newChildren };
+            }
+            return test;
+        }));
+    };
+
+    const handleSaveMapping = async () => {
+        if (!activeParentId) {
+            showNotification("Please select a parent test to save its mapping.", "error");
+            return;
+        }
+
+        const activeParent = tests.find(t => t._id === activeParentId);
+        
+        try {
+            const res = await fetch(`http://localhost:5000/api/tests/${activeParentId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ childTests: activeParent.childTests })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showNotification(`Child parameters permanently linked to ${activeParent.testName}!`, "success");
+            } else {
+                showNotification(data.error || "Failed to save mapping.", "error");
+            }
+        } catch (error) {
+            console.error(error);
+            showNotification("Server error during save.", "error");
+        }
+    };
+
+    // Filtered Lists
+    const parentTests = tests.filter(t => t.testFormat === 'Multiple' && t.testName.toLowerCase().includes(searchLeft.toLowerCase()));
+    const activeParent = tests.find(t => t._id === activeParentId);
+    
+    // Middle: show all non-parent tests (Single, Heading, etc.) not yet linked
+    const availableSingleTests = tests.filter(t => 
+        t.testFormat !== 'Multiple' && 
+        t.testFormat !== 'Profile' && 
+        (!activeParent || !activeParent.childTests.includes(t._id)) &&
+        t.testName.toLowerCase().includes(searchMiddle.toLowerCase())
+    );
+
+    // Right list (those already linked to the active parent)
+    const linkedSingleTests = activeParent 
+        ? activeParent.childTests.map(id => tests.find(t => t._id === id)).filter(Boolean)
+        : [];
+
+    return (
+        <div className="p-4 min-h-screen bg-slate-50 font-sans">
             <motion.div 
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
-                className="w-full bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden"
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="max-w-[1600px] mx-auto bg-white shadow-xl shadow-slate-200/50 border border-slate-200 rounded-xl overflow-hidden"
             >
-                {/* Header matching screenshot aesthetic */}
-                <div className="bg-blue-700 px-5 py-3.5 flex items-center justify-between text-white shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <Boxes size={20} strokeWidth={2.5} />
-                        <h2 className="text-lg font-bold tracking-wide">Group / Multi Test Linkage</h2>
+                {/* Red Header Bar matching the screenshot */}
+                <div className="bg-red-600 px-5 py-3 flex items-center justify-between text-white shadow-sm">
+                    <div className="flex items-center gap-2">
+                        <Activity size={20} strokeWidth={2.5} />
+                        <h2 className="text-lg font-bold tracking-wide">MultiTest Setting</h2>
                     </div>
+                    {activeParentId && (
+                        <button 
+                            onClick={handleSaveMapping}
+                            className="bg-white/20 hover:bg-white/30 transition-colors px-4 py-1.5 rounded flex items-center gap-2 text-sm font-bold border border-white/20"
+                        >
+                            <Save size={16} /> Save Mapping
+                        </button>
+                    )}
                 </div>
 
-                <div className="p-6 md:p-8">
-                    <form onSubmit={handleSave} className="space-y-6">
-                        {/* Top Controls */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="flex flex-col">
-                                <label className="text-xs font-semibold text-slate-600 mb-1">Select Department Filter</label>
-                                <select 
-                                    value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-800"
-                                >
-                                    <option value="">-- All Departments --</option>
-                                    <option value="HAEMATOLOGY">HAEMATOLOGY</option>
-                                </select>
+                {/* 3 Column Workbench Container */}
+                <div className="p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-160px)] min-h-[600px]">
+                    
+                    {/* LEFT COLUMN: Multiple Parent List */}
+                    <div className="flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm h-full">
+                        <div className="p-3 border-b border-slate-200 bg-slate-50/50 flex items-center gap-2">
+                            <div className="text-xs font-bold text-slate-500 uppercase flex-1">Search Parent</div>
+                            <div className="relative w-full max-w-[200px]">
+                                <input 
+                                    type="text" placeholder="Search..."
+                                    value={searchLeft} onChange={e => setSearchLeft(e.target.value)}
+                                    className="w-full pl-8 pr-2 py-1.5 text-sm bg-white border border-emerald-500/50 rounded outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-700 placeholder:text-slate-400"
+                                />
+                                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600" />
+                            </div>
+                        </div>
+                        
+                        <div className="bg-slate-100/60 px-4 py-2 border-b border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center">
+                            <span>TestName</span>
+                        </div>
+                        
+                        <div className="overflow-y-auto flex-1 p-2 space-y-1">
+                            {isLoading ? (
+                                <p className="text-center text-slate-400 text-sm py-8 font-medium">Loading Parents...</p>
+                            ) : parentTests.length === 0 ? (
+                                <p className="text-center text-slate-400 text-sm py-8 font-medium">No Multi-Test Parents found.</p>
+                            ) : (
+                                parentTests.map(test => (
+                                    <button 
+                                        key={test._id}
+                                        onClick={() => setActiveParentId(test._id)}
+                                        className={`w-full text-left flex items-start gap-2 px-3 py-2.5 rounded transition-all text-sm font-bold ${activeParentId === test._id ? 'bg-blue-600 text-white shadow-md' : 'text-slate-700 hover:bg-blue-50 hover:text-blue-700'}`}
+                                    >
+                                        <ChevronRight size={16} className={`shrink-0 mt-0.5 ${activeParentId === test._id ? 'text-white' : 'text-blue-500'}`} />
+                                        <span className="leading-tight">{test.testName}</span>
+                                    </button>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* MIDDLE COLUMN: Single Child Pool */}
+                    <div className="flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm h-full opacity-100 transition-opacity">
+                        <div className="p-3 border-b border-slate-200 bg-slate-50/50 flex items-center gap-2">
+                            <div className="text-xs font-bold text-slate-500 uppercase flex-1">Search Component</div>
+                            <div className="relative w-full max-w-[200px]">
+                                <input 
+                                    type="text" placeholder="Search parameter..."
+                                    value={searchMiddle} onChange={e => setSearchMiddle(e.target.value)}
+                                    className="w-full pl-8 pr-2 py-1.5 text-sm bg-white border border-emerald-500/50 rounded outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 text-slate-700 placeholder:text-slate-400"
+                                />
+                                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-600" />
+                            </div>
+                        </div>
+                        
+                        <div className="bg-slate-100/60 px-4 py-2 border-b border-slate-200 text-xs font-bold text-slate-800 flex justify-between items-center pr-10">
+                            <span>TestName</span>
+                            <span>Format</span>
+                        </div>
+                        
+                        <div className={`overflow-y-auto flex-1 p-2 space-y-1 ${!activeParentId ? 'opacity-50 pointer-events-none' : ''}`}>
+                            {!activeParentId ? (
+                                <p className="text-center text-slate-400 text-sm py-8 font-medium">Select a Parent Test first to assign parameters.</p>
+                            ) : availableSingleTests.length === 0 ? (
+                                <p className="text-center text-slate-400 text-sm py-8 font-medium">All matched tests are already linked.</p>
+                            ) : (
+                                availableSingleTests.map(test => (
+                                    <div 
+                                        key={test._id}
+                                        className="w-full flex items-center justify-between px-3 py-2 rounded hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all group"
+                                    >
+                                        <div className="flex items-start gap-2 flex-1 min-w-0">
+                                            <button 
+                                                onClick={() => handleAddChild(test._id)}
+                                                className="shrink-0 text-blue-600 hover:text-white hover:bg-blue-600 p-0.5 rounded transition-colors"
+                                                title="Assign to Multi-Test"
+                                            >
+                                                <Plus size={18} strokeWidth={3} />
+                                            </button>
+                                            <span className="text-sm font-bold text-slate-700 leading-tight truncate">
+                                                {test.testName}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                                                {test.testFormat || 'Single'}
+                                            </span>
+                                            <button
+                                                onClick={() => navigate('/tests/entry', { state: { test } })}
+                                                className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-0.5 rounded transition-colors"
+                                                title="Edit Test"
+                                            >
+                                                <Edit2 size={14} strokeWidth={2.5} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Active Children Frame */}
+                    <div className="flex flex-col h-full pl-2">
+                        {/* Box corresponding exactly to red border in screenshot */}
+                        <div className="border border-red-600 h-full flex flex-col bg-white">
+                            <div className="bg-red-50/50 px-4 py-3 border-b border-red-200 text-sm font-bold text-red-700">
+                                {activeParent ? activeParent.testName : "Select Multi Test"}
                             </div>
                             
-                            <div className="flex flex-col">
-                                <label className="text-xs font-semibold text-slate-600 mb-1">Select Group / Parent Test</label>
-                                <select 
-                                    value={groupName} onChange={(e) => setGroupName(e.target.value)} required
-                                    className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-bold text-slate-800"
-                                >
-                                    <option value="">-- Select Target Group --</option>
-                                    {parentTests.map(t => <option key={t._id} value={t._id}>{t.testName}</option>)}
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Linkage Area */}
-                        <div className="mt-8 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                                <h3 className="text-sm font-bold text-slate-700">Assign Child Parameters</h3>
-                            </div>
-                            <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[400px] overflow-y-auto">
-                                {childTests.map((test) => (
-                                    <label key={test._id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${selectedTests.includes(test._id) ? 'bg-blue-50 border-blue-300 shadow-sm' : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}>
-                                        <input 
-                                            type="checkbox" 
-                                            checked={selectedTests.includes(test._id)}
-                                            onChange={() => toggleTest(test._id)}
-                                            className="mt-0.5 w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                        />
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-800 leading-tight">{test.testName}</p>
-                                            <p className="text-xs text-slate-500 mt-1 font-mono">{test.shortCode || test.testCode}</p>
+                            <div className="flex-1 overflow-y-auto p-2 pr-1 space-y-1 bg-slate-50/30">
+                                {!activeParent ? (
+                                    <p className="text-center text-slate-400 text-sm py-8 font-medium">No parent selected.</p>
+                                ) : linkedSingleTests.length === 0 ? (
+                                    <p className="text-center text-slate-400 text-sm py-8 font-medium">No children assigned yet.</p>
+                                ) : (
+                                    linkedSingleTests.map((test, index) => (
+                                        <div 
+                                            key={`${test._id}-${index}`}
+                                            className="w-full flex items-center justify-between px-3 py-2 rounded border border-slate-200 bg-white shadow-sm"
+                                        >
+                                            <span className="text-sm font-bold text-slate-800 leading-tight flex items-center gap-2 flex-1 min-w-0">
+                                                <OrderInput 
+                                                    currentIndex={index} 
+                                                    max={linkedSingleTests.length} 
+                                                    onReorder={handleReorderChild} 
+                                                />
+                                                <span className="truncate">{test.testName}</span>
+                                            </span>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <button
+                                                    onClick={() => navigate('/tests/entry', { state: { test } })}
+                                                    className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1 rounded transition-colors"
+                                                    title="Edit Test"
+                                                >
+                                                    <Edit2 size={13} strokeWidth={2.5} />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleRemoveChild(test._id)}
+                                                    className="text-slate-400 hover:text-white hover:bg-red-500 p-0.5 rounded transition-colors"
+                                                    title="Remove from Multi-Test"
+                                                >
+                                                    <X size={16} strokeWidth={3} />
+                                                </button>
+                                            </div>
                                         </div>
-                                    </label>
-                                ))}
+                                    ))
+                                )}
                             </div>
                         </div>
+                    </div>
 
-                        {/* Bottom Actions */}
-                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                            <button type="button" className="px-5 py-2.5 text-slate-600 bg-slate-100 hover:bg-slate-200 font-bold rounded-lg transition-colors flex items-center gap-2">
-                                <RefreshCw size={16} /> Reset
-                            </button>
-                            <button type="submit" className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-lg shadow-md shadow-blue-500/30 hover:bg-blue-700 transition-colors flex items-center gap-2">
-                                <Save size={18} /> Link Parameters
-                            </button>
-                        </div>
-                    </form>
                 </div>
             </motion.div>
         </div>

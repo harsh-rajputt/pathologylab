@@ -69,7 +69,8 @@ exports.updatePatient = async (req, res) => {
                     remarks: req.body.remarks,
                     tests: req.body.tests,
                     amounts: req.body.amounts,
-                    status: req.body.status
+                    status: req.body.status,
+                    results: req.body.results
                 }
             },
             { new: true, runValidators: true }

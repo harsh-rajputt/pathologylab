@@ -40,7 +40,8 @@ const testSchema = new mongoose.Schema({
         normalRange: String,
         lower: String,
         higher: String
-    }]
+    }],
+    childTests: [{ type: String }]
 }, { timestamps: true });
 
 module.exports = mongoose.models.Test || mongoose.model('Test', testSchema);

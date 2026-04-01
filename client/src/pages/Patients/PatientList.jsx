@@ -292,7 +292,10 @@ export default function PatientList() {
                                     Print Receipt
                                 </button>
                                 
-                                <button className="w-full py-2.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium rounded transition-colors shadow-sm">
+                                <button 
+                                    onClick={() => { navigate('/patients/result-entry', { state: { patient: selectedPatient } }); setSelectedPatient(null); }}
+                                    className="w-full py-2.5 bg-[#8b5cf6] hover:bg-[#7c3aed] text-white font-medium rounded transition-colors shadow-sm"
+                                >
                                     Result Entry
                                 </button>
                                 

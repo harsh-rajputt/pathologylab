@@ -4,6 +4,7 @@ import { LayoutDashboard, Users, FlaskConical, BookOpen, Settings, Database, Che
 import Dashboard from './pages/Dashboard/Dashboard';
 import PatientRegistration from './pages/Patients/PatientRegistration';
 import PatientList from './pages/Patients/PatientList';
+import ResultEntry from './pages/Patients/ResultEntry';
 import TestDepartment from './pages/Tests/TestDepartment';
 import TestWings from './pages/Tests/TestWings';
 import TestList from './pages/Tests/TestList';
@@ -362,6 +363,7 @@ function Layout() {
           <Route path="/"                  element={<Dashboard />} />
           <Route path="/patients/register" element={<PatientRegistration />} />
           <Route path="/patients/list"     element={<PatientList />} />
+          <Route path="/patients/result-entry" element={<ResultEntry />} />
           <Route path="/tests/department"  element={<TestDepartment />} />
           <Route path="/tests/wings"       element={<TestWings />} />
           <Route path="/tests/list"        element={<TestList />} />

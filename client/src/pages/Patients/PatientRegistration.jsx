@@ -8,18 +8,6 @@ import {
     Wallet, CreditCard, LayoutList, RefreshCcw, HandCoins
 } from 'lucide-react';
 
-const COMMON_TESTS = [
-    { name: "Complete Blood Count (CBC)", price: 400 },
-    { name: "Lipid Profile", price: 600 },
-    { name: "Liver Function Test (LFT)", price: 750 },
-    { name: "Kidney Function Test (KFT)", price: 650 },
-    { name: "Thyroid Profile (T3, T4, TSH)", price: 500 },
-    { name: "Blood Sugar Fasting (FBS)", price: 150 },
-    { name: "HbA1c", price: 450 },
-    { name: "Urine Routine & Microscopy", price: 200 },
-    { name: "Vitamin D3", price: 1200 },
-    { name: "Vitamin B12", price: 1000 }
-];
 
 const SAMPLE_TYPES = [
     "Blood", "Urine", "Stool", "Sputum", "Swab", "Tissue", "Semen", "Other"
@@ -49,6 +37,8 @@ export default function PatientRegistration() {
     const [selectedTests, setSelectedTests] = useState([]);
     const [currentTest, setCurrentTest] = useState('');
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [availableTests, setAvailableTests] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     
     // Edit mode tracking
     const [isEditMode, setIsEditMode] = useState(false);
@@ -95,6 +85,16 @@ export default function PatientRegistration() {
         }
     }, [location.state, defaultDate, defaultTime]);
 
+    // Fetch all tests from the database
+    useEffect(() => {
+        fetch('http://localhost:5000/api/tests')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) setAvailableTests(data.tests);
+            })
+            .catch(err => console.error('Failed to fetch tests:', err));
+    }, []);
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -105,17 +105,31 @@ export default function PatientRegistration() {
         setAmountDetails(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleAddTest = () => {
-        if (currentTest.trim() && !selectedTests.some(t => t.name.toLowerCase() === currentTest.trim().toLowerCase())) {
-            const predefined = COMMON_TESTS.find(t => t.name.toLowerCase() === currentTest.trim().toLowerCase());
+    const handleAddTest = (testNameOverride) => {
+        const nameToAdd = (testNameOverride || currentTest).trim();
+        if (nameToAdd && !selectedTests.some(t => t.name.toLowerCase() === nameToAdd.toLowerCase())) {
+            const dbTest = availableTests.find(t => t.testName.toLowerCase() === nameToAdd.toLowerCase());
             setSelectedTests(prev => [...prev, {
-                name: currentTest.trim(), 
-                price: predefined ? predefined.price : 0 // User can add custom test, default price 0
+                name: nameToAdd, 
+                price: dbTest ? (Number(dbTest.rate) || 0) : 0
             }]);
             setCurrentTest('');
-            setAmountDetails(prev => ({ ...prev, received: '' })); // Reset received when tests change
+            setShowSuggestions(false);
+            setAmountDetails(prev => ({ ...prev, received: '' }));
         }
     };
+
+    // Filter tests matching name OR short code
+    const testSuggestions = currentTest.trim().length > 0
+        ? availableTests.filter(t => {
+            const q = currentTest.trim().toLowerCase();
+            return (
+                t.testName?.toLowerCase().includes(q) ||
+                t.shortCode?.toLowerCase().includes(q) ||
+                t.testCode?.toLowerCase().includes(q)
+            );
+          }).slice(0, 10)
+        : [];
 
     const handleRemoveTest = (testNameToRemove) => {
         setSelectedTests(prev => prev.filter(test => test.name !== testNameToRemove));
@@ -429,21 +443,38 @@ export default function PatientRegistration() {
                                             <input 
                                                 type="text" 
                                                 value={currentTest}
-                                                onChange={(e) => setCurrentTest(e.target.value)}
+                                                onChange={(e) => { setCurrentTest(e.target.value); setShowSuggestions(true); }}
                                                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTest())}
-                                                placeholder="--- Search Test Name ---" 
-                                                list="common-tests"
+                                                onFocus={() => setShowSuggestions(true)}
+                                                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                                                placeholder="--- Search by Test Name or Short Code ---" 
                                                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 text-slate-900 outline-none transition-all"
                                             />
-                                            <datalist id="common-tests">
-                                                {COMMON_TESTS.map(test => (
-                                                    <option key={test.name} value={test.name} />
-                                                ))}
-                                            </datalist>
+                                            {/* Custom Dropdown Suggestions */}
+                                            {showSuggestions && testSuggestions.length > 0 && (
+                                                <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl overflow-hidden max-h-64 overflow-y-auto">
+                                                    {testSuggestions.map(test => (
+                                                        <button
+                                                            key={test._id}
+                                                            type="button"
+                                                            onMouseDown={() => handleAddTest(test.testName)}
+                                                            className="w-full text-left px-4 py-2.5 hover:bg-rose-50 flex items-center gap-3 border-b border-slate-100 last:border-0 transition-colors"
+                                                        >
+                                                            {test.shortCode && (
+                                                                <span className="shrink-0 text-xs font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded font-mono">
+                                                                    {test.shortCode}
+                                                                </span>
+                                                            )}
+                                                            <span className="text-sm font-semibold text-slate-800 flex-1">{test.testName}</span>
+                                                            <span className="text-xs text-slate-400 shrink-0">₹{test.rate || 0}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
                                         <button 
                                             type="button"
-                                            onClick={handleAddTest}
+                                            onClick={() => handleAddTest()}
                                             disabled={!currentTest.trim()}
                                             className="px-5 py-2.5 bg-rose-50 text-rose-600 font-semibold rounded-lg hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                                         >

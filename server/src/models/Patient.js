@@ -33,7 +33,8 @@ const patientSchema = new mongoose.Schema({
     remarks: String,
     tests: [testSchema],
     amounts: amountSchema,
-    status: { type: String, default: 'New' }
+    status: { type: String, default: 'New' },
+    results: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, { timestamps: true });
 
 module.exports = mongoose.models.Patient || mongoose.model('Patient', patientSchema);
