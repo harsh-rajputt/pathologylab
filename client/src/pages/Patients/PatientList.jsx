@@ -298,6 +298,13 @@ export default function PatientList() {
                                 >
                                     Result Entry
                                 </button>
+
+                                <button
+                                    onClick={() => { navigate('/patients/result-print', { state: { patient: selectedPatient, results: selectedPatient.results || {} } }); setSelectedPatient(null); }}
+                                    className="w-full py-2.5 bg-[#16a34a] hover:bg-[#15803d] text-white font-medium rounded transition-colors shadow-sm"
+                                >
+                                    Print Option
+                                </button>
                                 
                                 <button className="w-full py-2.5 bg-[#ef4444] hover:bg-[#dc2626] text-white font-medium rounded transition-colors shadow-sm">
                                     Amount ₹{Number(selectedPatient.amounts?.dues || 0)} Dues

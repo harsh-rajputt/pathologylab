@@ -12,6 +12,7 @@ export default function ResultEntry() {
     const [results, setResults] = useState({});
     const [isSaving, setIsSaving] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [showRedirect, setShowRedirect] = useState(false);
 
     const handleResultKeyDown = useCallback((e) => {
         if (e.key === 'Enter') {
@@ -96,7 +97,7 @@ export default function ResultEntry() {
                 body: JSON.stringify({ results, status: 'Result Filled' })
             });
             const data = await res.json();
-            if (data.success) { setSaved(true); setTimeout(() => setSaved(false), 3000); }
+            if (data.success) { setSaved(true); setShowRedirect(true); }
             else alert(data.error || 'Failed to save results');
         } catch { alert('Server error while saving results'); }
         finally { setIsSaving(false); }
@@ -285,6 +286,46 @@ export default function ResultEntry() {
                 </div>
 
             </motion.div>
+
+            {/* Redirect To Modal — shown after successful save */}
+            {showRedirect && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                    <div className="bg-white rounded shadow-2xl overflow-hidden w-64">
+                        {/* Header */}
+                        <div className="bg-red-600 flex items-center justify-between px-4 py-2.5">
+                            <span className="text-white font-bold text-base">Redirect To</span>
+                            <button
+                                onClick={() => setShowRedirect(false)}
+                                className="text-white hover:text-red-200 font-bold text-lg leading-none"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                        {/* Options */}
+                        <div className="p-3 space-y-2 bg-gray-100">
+                            <button
+                                onClick={() => { setShowRedirect(false); navigate('/patients/result-print', { state: { patient, results } }); }}
+                                className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded transition-colors"
+                            >
+                                Print Option
+                            </button>
+                            <button
+                                onClick={() => { setShowRedirect(false); navigate('/patients/list'); }}
+                                className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded transition-colors"
+                            >
+                                Patient List
+                            </button>
+                            <button
+                                onClick={() => { setShowRedirect(false); navigate('/patients/register'); }}
+                                className="w-full py-2.5 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded transition-colors"
+                            >
+                                New Registration
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

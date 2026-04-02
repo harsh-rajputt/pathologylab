@@ -3,44 +3,7 @@ import { motion } from 'framer-motion';
 import { Save, Plus, X, Search, ChevronRight, Activity, Edit2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useNavigate } from 'react-router-dom';
-
-const OrderInput = ({ currentIndex, max, onReorder }) => {
-    const [val, setVal] = useState(currentIndex + 1);
-
-    useEffect(() => {
-        setVal(currentIndex + 1);
-    }, [currentIndex]);
-
-    const handleBlur = () => {
-        let num = parseInt(val);
-        if (isNaN(num) || num < 1) num = 1;
-        if (num > max) num = max;
-        setVal(num);
-        if (num - 1 !== currentIndex) {
-            onReorder(currentIndex, num - 1);
-        }
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.target.blur();
-        }
-    };
-
-    return (
-        <input 
-            type="number"
-            min="1"
-            max={max}
-            value={val}
-            onChange={(e) => setVal(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            className="w-12 text-center text-sm font-bold border border-slate-300 rounded bg-slate-50 focus:ring-1 focus:ring-red-500 outline-none hover:bg-slate-100 py-0.5"
-            title="Type Position and Press Enter or Click Away"
-        />
-    );
-};
+import { OrderInput } from '../../components/UI/OrderInput';
 
 export default function MultiTestSetting() {
     const { showNotification } = useApp();
@@ -179,7 +142,7 @@ export default function MultiTestSetting() {
                 </div>
 
                 {/* 3 Column Workbench Container */}
-                <div className="p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-160px)] min-h-[600px]">
+                <div className="p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-160px)] min-h-[600px] overflow-hidden">
                     
                     {/* LEFT COLUMN: Multiple Parent List */}
                     <div className="flex flex-col bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm h-full">
@@ -199,7 +162,7 @@ export default function MultiTestSetting() {
                             <span>TestName</span>
                         </div>
                         
-                        <div className="overflow-y-auto flex-1 p-2 space-y-1">
+                        <div className="overflow-y-auto flex-1 p-2 space-y-1 min-h-0">
                             {isLoading ? (
                                 <p className="text-center text-slate-400 text-sm py-8 font-medium">Loading Parents...</p>
                             ) : parentTests.length === 0 ? (
@@ -238,7 +201,7 @@ export default function MultiTestSetting() {
                             <span>Format</span>
                         </div>
                         
-                        <div className={`overflow-y-auto flex-1 p-2 space-y-1 ${!activeParentId ? 'opacity-50 pointer-events-none' : ''}`}>
+                        <div className={`overflow-y-auto flex-1 p-2 space-y-1 min-h-0 ${!activeParentId ? 'opacity-50 pointer-events-none' : ''}`}>
                             {!activeParentId ? (
                                 <p className="text-center text-slate-400 text-sm py-8 font-medium">Select a Parent Test first to assign parameters.</p>
                             ) : availableSingleTests.length === 0 ? (
@@ -280,14 +243,14 @@ export default function MultiTestSetting() {
                     </div>
 
                     {/* RIGHT COLUMN: Active Children Frame */}
-                    <div className="flex flex-col h-full pl-2">
+                    <div className="flex flex-col h-full pl-2 overflow-hidden">
                         {/* Box corresponding exactly to red border in screenshot */}
-                        <div className="border border-red-600 h-full flex flex-col bg-white">
+                        <div className="border border-red-600 h-full flex flex-col bg-white overflow-hidden">
                             <div className="bg-red-50/50 px-4 py-3 border-b border-red-200 text-sm font-bold text-red-700">
                                 {activeParent ? activeParent.testName : "Select Multi Test"}
                             </div>
                             
-                            <div className="flex-1 overflow-y-auto p-2 pr-1 space-y-1 bg-slate-50/30">
+                            <div className="flex-1 overflow-y-auto p-2 pr-1 space-y-1 bg-slate-50/30 min-h-0">
                                 {!activeParent ? (
                                     <p className="text-center text-slate-400 text-sm py-8 font-medium">No parent selected.</p>
                                 ) : linkedSingleTests.length === 0 ? (

@@ -29,6 +29,16 @@ exports.updateTest = async (req, res) => {
     }
 };
 
+exports.getTestById = async (req, res) => {
+    try {
+        const test = await Test.findById(req.params.id);
+        if (!test) return res.status(404).json({ success: false, error: "Test not found" });
+        res.status(200).json({ success: true, test });
+    } catch (error) {
+        res.status(500).json({ success: false, error: "Server error fetching test" });
+    }
+};
+
 exports.deleteTest = async (req, res) => {
     try {
         await Test.findByIdAndDelete(req.params.id);

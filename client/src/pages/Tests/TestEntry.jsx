@@ -5,38 +5,7 @@ import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// Reusable input component for cleaner code
-const InputField = ({ label, name, type = "text", value, onChange, placeholder = "", className = "" }) => (
-    <div className={`flex flex-col mb-3 ${className}`}>
-        <label className="text-xs font-semibold text-slate-600 mb-1">{label}</label>
-        <input
-            type={type} name={name} value={value} onChange={onChange} placeholder={placeholder}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-fuchsia-500/20 focus:border-fuchsia-500 focus:bg-white transition-all outline-none font-medium text-slate-800 text-sm"
-        />
-    </div>
-);
-
-const SelectField = ({ label, name, value, onChange, options, className = "" }) => (
-    <div className={`flex flex-col mb-3 ${className}`}>
-        <label className="text-xs font-semibold text-slate-600 mb-1">{label}</label>
-        <select
-            name={name} value={value} onChange={onChange}
-            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-fuchsia-500/20 focus:border-fuchsia-500 focus:bg-white transition-all outline-none font-medium text-slate-800 text-sm appearance-none"
-        >
-            {options.map((opt, i) => <option key={i} value={opt.value || opt}>{opt.label || opt}</option>)}
-        </select>
-    </div>
-);
-
-const Checkbox = ({ label, name, checked, onChange }) => (
-    <label className="flex items-center gap-2 cursor-pointer group">
-        <input
-            type="checkbox" name={name} checked={checked} onChange={onChange}
-            className="w-4 h-4 rounded border-slate-300 text-fuchsia-600 focus:ring-fuchsia-500 transition-all cursor-pointer"
-        />
-        <span className="text-sm font-medium text-slate-600 group-hover:text-slate-800 transition-colors">{label}</span>
-    </label>
-);
+import { InputField, SelectField, Checkbox } from '../../components/UI/FormControls';
 
 export default function TestEntry() {
     const location = useLocation();
@@ -65,12 +34,46 @@ export default function TestEntry() {
     ]);
 
     useEffect(() => {
+        const fetchTestData = async (id) => {
+            try {
+                const res = await fetch(`http://localhost:5000/api/tests/${id}`);
+                const data = await res.json();
+                if (data.success && data.test) {
+                    const t = data.test;
+                    setFormData(prev => ({
+                        ...prev,
+                        ...t,
+                        testName: t.testName || t.name || '',
+                        testFormat: t.testFormat || t.format || 'Single',
+                        department: t.department || '',
+                        unit: t.unit || '',
+                        wing: t.wing || 'PATHOLOGY',
+                        rate: t.rate ?? 0,
+                        discount: t.discount ?? 0,
+                        offerRate: t.offerRate ?? 0,
+                        content: t.content || '',
+                        _id: t._id || t.id
+                    }));
+
+                    if (t.ageGroups && Array.isArray(t.ageGroups) && t.ageGroups.length > 0) {
+                        setAgeGroups(t.ageGroups);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch test details", error);
+            }
+        };
+
         if (location.state && location.state.test) {
             setIsEditMode(true);
-            const { ageGroups: passedAgeGroups, ...rest } = location.state.test;
-            setFormData(prev => ({ ...prev, ...rest }));
-            if (passedAgeGroups && passedAgeGroups.length > 0) {
-                setAgeGroups(passedAgeGroups);
+            const initialTest = location.state.test;
+            const testId = initialTest._id || initialTest.id;
+            
+            if (testId) {
+                fetchTestData(testId);
+            } else {
+                // Fallback for simple cases if ID is missing (should not happen normally)
+                setFormData(prev => ({ ...prev, ...initialTest }));
             }
         }
     }, [location.state]);
