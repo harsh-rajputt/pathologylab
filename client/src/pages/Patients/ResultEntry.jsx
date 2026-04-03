@@ -110,7 +110,7 @@ export default function ResultEntry() {
             const res = await fetch(`http://localhost:5000/api/patients/${patient._id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ results: {} })
+                body: JSON.stringify({ results: {}, status: 'Deleted' })
             });
             const data = await res.json();
             if (!data.success) alert(data.error || 'Failed to clear results');

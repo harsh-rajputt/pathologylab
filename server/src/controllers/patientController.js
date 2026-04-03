@@ -33,9 +33,20 @@ exports.registerPatient = async (req, res) => {
 
 exports.getPatients = async (req, res) => {
     try {
-        const patients = await Patient.find().sort({ createdAt: -1 });
+        const { from, upto } = req.query;
+        let query = {};
+        
+        if (from && upto) {
+            query.createdAt = {
+                $gte: new Date(from),
+                $lte: new Date(new Date(upto).setHours(23, 59, 59, 999))
+            };
+        }
+        
+        const patients = await Patient.find(query).sort({ createdAt: -1 });
         res.status(200).json({ success: true, patients });
     } catch (error) {
+        console.error("Error fetching patients:", error);
         res.status(500).json({ success: false, error: 'Failed to fetch patients' });
     }
 };

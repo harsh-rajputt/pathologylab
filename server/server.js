@@ -24,6 +24,7 @@ const departmentRoutes = require('./src/routes/testDepartmentRoutes');
 const patientRoutes = require('./src/routes/patientRoutes');
 const testUnitRoutes = require('./src/routes/testUnitRoutes');
 const testRoutes = require('./src/routes/testRoutes');
+const referenceDoctorRoutes = require('./src/routes/referenceDoctorRoutes');
 
 // Basic Architecture Route
 app.get('/api/health', (req, res) => {
@@ -36,6 +37,7 @@ app.use('/api/departments', departmentRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/test-units', testUnitRoutes);
 app.use('/api/tests', testRoutes);
+app.use('/api/references', referenceDoctorRoutes);
 
 // Start the Backend Node Server
 app.listen(PORT, () => {

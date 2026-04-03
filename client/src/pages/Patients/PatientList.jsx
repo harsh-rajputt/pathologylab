@@ -17,18 +17,23 @@ export default function PatientList() {
         user: ''
     });
 
-    useEffect(() => {
-        const fetchPatients = async () => {
-            try {
-                const res = await fetch('http://localhost:5000/api/patients');
-                const data = await res.json();
-                if (data.success) {
-                    setPatients(data.patients);
-                }
-            } catch (error) {
-                console.error("Failed to load patients:", error);
+    const fetchPatients = async () => {
+        try {
+            const url = new URL('http://localhost:5000/api/patients');
+            if (filters.fromDate) url.searchParams.append('from', filters.fromDate);
+            if (filters.uptoDate) url.searchParams.append('upto', filters.uptoDate);
+            
+            const res = await fetch(url.toString());
+            const data = await res.json();
+            if (data.success) {
+                setPatients(data.patients);
             }
-        };
+        } catch (error) {
+            console.error("Failed to load patients:", error);
+        }
+    };
+
+    useEffect(() => {
         fetchPatients();
     }, []);
 
@@ -63,13 +68,29 @@ export default function PatientList() {
         }
     };
 
+    const handlePrint = async (patient) => {
+        try {
+            await fetch(`http://localhost:5000/api/patients/${patient._id || patient.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'Printed' })
+            });
+            // Update local state so it immediately shows without reload
+            setPatients(patients.map(p => (p._id === patient._id || p.id === patient.id) ? { ...p, status: 'Printed' } : p));
+        } catch (error) {
+            console.error('Error updating status to printed:', error);
+        }
+        setSelectedPatient(null);
+        navigate('/patients/result-print', { state: { patient, results: patient.results || {} } });
+    };
+
     const containerVariants = {
         hidden: { opacity: 0, y: 15 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
     };
 
     return (
-        <div className="min-h-screen bg-slate-100/50 p-4 md:p-6 lg:p-8">
+        <div className="min-h-screen bg-slate-100/50 p-4 md:p-6 lg:p-8 pb-24">
             <motion.div 
                 className="max-w-[1600px] mx-auto bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden"
                 initial="hidden"
@@ -150,7 +171,10 @@ export default function PatientList() {
                     </div>
 
                     <div>
-                        <button className="flex items-center gap-2 mb-0.5 px-6 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm cursor-pointer">
+                        <button 
+                            onClick={fetchPatients}
+                            className="flex items-center gap-2 mb-0.5 px-6 py-2 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm cursor-pointer"
+                        >
                             View <Play className="w-3.5 h-3.5 fill-current" />
                         </button>
                     </div>
@@ -199,7 +223,12 @@ export default function PatientList() {
                                             className="hover:bg-purple-50/50 transition-colors text-sm text-slate-700 cursor-pointer"
                                         >
                                             <td className="px-4 py-2.5">
-                                                <span className="inline-block px-2.5 py-1 bg-blue-600 text-white text-xs font-mono font-medium rounded shadow-sm">
+                                                <span className={`inline-block px-2.5 py-1 text-xs font-mono font-bold rounded shadow-sm ${
+                                                    patient.status === 'Printed' ? 'bg-blue-600 text-white' :
+                                                    patient.status === 'Result Filled' ? 'bg-sky-500 text-white' :
+                                                    patient.status === 'Deleted' ? 'bg-slate-900 text-white' :
+                                                    'bg-yellow-500 text-yellow-950'
+                                                }`}>
                                                     {patient.labId || patient.id}
                                                 </span>
                                             </td>
@@ -247,6 +276,17 @@ export default function PatientList() {
                     </table>
                 </div>
             </motion.div>
+
+            {/* Status Legend - Fixed at absolute bottom of page */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-slate-300 px-2 py-3 flex flex-wrap items-center justify-center gap-2 md:gap-4 shadow-[0_-4px_10px_-2px_rgba(0,0,0,0.1)]">
+                <span className="inline-flex items-center gap-1.5 px-4 py-1 bg-[#ffd700] text-black text-[13px] font-bold font-sans shadow-sm border border-[#e5c100]">New ♿</span>
+                <span className="inline-flex items-center gap-1.5 px-4 py-1 bg-[#fb0000] text-white text-[13px] font-bold font-sans shadow-sm border border-[#d60000]">Cancel 🚫</span>
+                <span className="inline-flex items-center gap-1.5 px-4 py-1 bg-[#8fbc8f] text-white text-[13px] font-bold font-sans shadow-sm border border-[#7ba87b]">Sample 👍</span>
+                <span className="inline-flex items-center gap-1.5 px-4 py-1 bg-[#87cefa] text-white text-[13px] font-bold font-sans shadow-sm border border-[#6ab9ed]">Result Fill 🖊️</span>
+                <span className="inline-flex items-center gap-1.5 px-4 py-1 bg-[#008000] text-white text-[13px] font-bold font-sans shadow-sm border border-[#006600]">Approved ☑️</span>
+                <span className="inline-flex items-center gap-1.5 px-4 py-1 bg-[#0000ff] text-white text-[13px] font-bold font-sans shadow-sm border border-[#0000cc]">Print 🖨️</span>
+                <span className="inline-flex items-center gap-1.5 px-4 py-1 bg-[#000000] text-white text-[13px] font-bold font-sans shadow-sm border border-[#333]">Result Deleted 🗑️</span>
+            </div>
 
             {/* Patient Action Modal Overlay */}
             <AnimatePresence>
@@ -299,12 +339,14 @@ export default function PatientList() {
                                     Result Entry
                                 </button>
 
-                                <button
-                                    onClick={() => { navigate('/patients/result-print', { state: { patient: selectedPatient, results: selectedPatient.results || {} } }); setSelectedPatient(null); }}
-                                    className="w-full py-2.5 bg-[#16a34a] hover:bg-[#15803d] text-white font-medium rounded transition-colors shadow-sm"
-                                >
-                                    Print Option
-                                </button>
+                                {selectedPatient.results && Object.keys(selectedPatient.results).length > 0 && (
+                                    <button
+                                        onClick={() => handlePrint(selectedPatient)}
+                                        className="w-full py-2.5 bg-[#16a34a] hover:bg-[#15803d] text-white font-medium rounded transition-colors shadow-sm"
+                                    >
+                                        Print Option
+                                    </button>
+                                )}
                                 
                                 <button className="w-full py-2.5 bg-[#ef4444] hover:bg-[#dc2626] text-white font-medium rounded transition-colors shadow-sm">
                                     Amount ₹{Number(selectedPatient.amounts?.dues || 0)} Dues

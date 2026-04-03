@@ -1,56 +1,101 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from "framer-motion";
 import { Users, Receipt, IndianRupee, Wallet, ArrowRight, Download, Calendar, Activity } from 'lucide-react';
 
-const stats = [
-    { 
-        id: 1,
-        title: "This Month Registration", 
-        value: "1", 
-        icon: Users,
-        trend: "+1 this week",
-        gradient: "from-blue-500 to-indigo-600",
-        shadow: "shadow-blue-500/30"
-    },
-    { 
-        id: 2,
-        title: "Bill For The Month",          
-        value: "220", 
-        icon: Receipt,
-        trend: "Steady",
-        gradient: "from-rose-400 to-red-500",
-        shadow: "shadow-rose-500/30"
-    },
-    { 
-        id: 3,
-        title: "Collection For The Month",    
-        value: "₹200.00", 
-        icon: IndianRupee,
-        trend: "+₹200 today",
-        gradient: "from-violet-500 to-fuchsia-600",
-        shadow: "shadow-violet-500/30"
-    },
-    { 
-        id: 4,
-        title: "Total Dues",                 
-        value: "₹0.00", 
-        icon: Wallet,
-        trend: "All clear",
-        gradient: "from-amber-400 to-orange-500",
-        shadow: "shadow-orange-500/30"
-    },
-];
-
-const dailyData = [
-    { id: 1, date: "07/03/2026", reg: 1, bill: "200.00", coll: "200.00", dues: "0.00" }
-];
-
-const monthlyData = [
-    { id: 1, month: "03-2026", reg: 1, bill: "200.00", coll: "200.00", dues: "0.00" },
-    { id: 2, month: "Total : -", reg: 1, bill: "200.00", coll: "200.00", dues: "0.00", isTotal: true },
-];
-
 export default function Dashboard() {
+    const [stats, setStats] = useState([
+        { id: 1, title: "This Month Registration", value: "0", icon: Users, trend: "", gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/30" },
+        { id: 2, title: "Bill For The Month", value: "₹0.00", icon: Receipt, trend: "", gradient: "from-rose-400 to-red-500", shadow: "shadow-rose-500/30" },
+        { id: 3, title: "Collection For The Month", value: "₹0.00", icon: IndianRupee, trend: "", gradient: "from-violet-500 to-fuchsia-600", shadow: "shadow-violet-500/30" },
+        { id: 4, title: "Total Dues", value: "₹0.00", icon: Wallet, trend: "", gradient: "from-amber-400 to-orange-500", shadow: "shadow-orange-500/30" },
+    ]);
+    const [dailyData, setDailyData] = useState([]);
+    const [monthlyData, setMonthlyData] = useState([]);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/patients');
+                const data = await res.json();
+                if (data.success) {
+                    const patients = data.patients;
+                    
+                    const now = new Date();
+                    const currentMonth = now.getMonth();
+                    const currentYear = now.getFullYear();
+
+                    let monthReg = 0;
+                    let monthBill = 0;
+                    let monthColl = 0;
+                    let totalDues = 0;
+
+                    const dailyMap = {};
+                    const monthlyMap = {};
+
+                    patients.forEach(p => {
+                        const date = new Date(p.createdAt);
+                        const pMonth = date.getMonth();
+                        const pYear = date.getFullYear();
+
+                        const bill = Number(p.amounts?.totalAmount || 0);
+                        const coll = Number(p.amounts?.received || 0);
+                        const dues = Number(p.amounts?.dues || 0);
+
+                        totalDues += dues;
+
+                        if (pMonth === currentMonth && pYear === currentYear) {
+                            monthReg++;
+                            monthBill += bill;
+                            monthColl += coll;
+                        }
+
+                        // Daily Aggregation
+                        const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                        if (!dailyMap[dateStr]) dailyMap[dateStr] = { reg: 0, bill: 0, coll: 0, dues: 0 };
+                        dailyMap[dateStr].reg++;
+                        dailyMap[dateStr].bill += bill;
+                        dailyMap[dateStr].coll += coll;
+                        dailyMap[dateStr].dues += dues;
+
+                        // Monthly Aggregation
+                        const monthStr = `${String(pMonth + 1).padStart(2, '0')}-${pYear}`;
+                        if (!monthlyMap[monthStr]) monthlyMap[monthStr] = { reg: 0, bill: 0, coll: 0, dues: 0 };
+                        monthlyMap[monthStr].reg++;
+                        monthlyMap[monthStr].bill += bill;
+                        monthlyMap[monthStr].coll += coll;
+                        monthlyMap[monthStr].dues += dues;
+                    });
+
+                    setStats([
+                        { id: 1, title: "This Month Registration", value: String(monthReg), icon: Users, trend: "Current", gradient: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/30" },
+                        { id: 2, title: "Bill For The Month", value: `₹${monthBill.toFixed(2)}`, icon: Receipt, trend: "Current", gradient: "from-rose-400 to-red-500", shadow: "shadow-rose-500/30" },
+                        { id: 3, title: "Collection For The Month", value: `₹${monthColl.toFixed(2)}`, icon: IndianRupee, trend: "Current", gradient: "from-violet-500 to-fuchsia-600", shadow: "shadow-violet-500/30" },
+                        { id: 4, title: "Total Outstanding Dues", value: `₹${totalDues.toFixed(2)}`, icon: Wallet, trend: "All Time", gradient: "from-amber-400 to-orange-500", shadow: "shadow-orange-500/30" },
+                    ]);
+
+                    const dailyArr = Object.entries(dailyMap).map(([date, data], index) => ({
+                        id: index + 1, date, reg: data.reg, bill: data.bill.toFixed(2), coll: data.coll.toFixed(2), dues: data.dues.toFixed(2)
+                    }));
+                    setDailyData(dailyArr.sort((a,b) => b.id - a.id));
+
+                    let tReg = 0, tBill = 0, tColl = 0, tDues = 0;
+                    const monthlyArr = Object.entries(monthlyMap).map(([month, data], index) => {
+                        tReg += data.reg; tBill += data.bill; tColl += data.coll; tDues += data.dues;
+                        return { id: index + 1, month, reg: data.reg, bill: data.bill.toFixed(2), coll: data.coll.toFixed(2), dues: data.dues.toFixed(2) };
+                    });
+                    
+                    if (monthlyArr.length > 0) {
+                        monthlyArr.push({ id: monthlyArr.length + 1, month: "Total : -", reg: tReg, bill: tBill.toFixed(2), coll: tColl.toFixed(2), dues: tDues.toFixed(2), isTotal: true });
+                    }
+                    setMonthlyData(monthlyArr);
+                }
+            } catch (error) {
+                console.error("Dashboard dataload error", error);
+            }
+        };
+        fetchDashboardData();
+    }, []);
+
     return (
         <div className="p-6 md:p-8 min-h-screen bg-slate-50/50 font-sans">
             {/* Header */}

@@ -186,9 +186,16 @@ export default function TestEntry() {
                         <ListIcon size={20} strokeWidth={2.5} />
                         <h2 className="text-lg font-bold tracking-wide">Test Entry</h2>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button type="button" onClick={() => window.location.reload()} className="hover:bg-white/20 p-1.5 rounded-lg transition-colors"><RefreshCw size={18} /></button>
-                        {/* <button type="button" className="hover:bg-white/20 p-1.5 rounded-lg transition-colors"><Maximize2 size={18} /></button> */}
+                    <div className="flex items-center gap-3">
+                        <button 
+                            type="button" 
+                            onClick={() => navigate('/tests/list')} 
+                            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors font-medium text-sm"
+                            title="Go to Test List"
+                        >
+                            <ListIcon size={16} /> Test List
+                        </button>
+                        <button type="button" onClick={() => window.location.reload()} className="hover:bg-white/20 p-1.5 rounded-lg transition-colors" title="Reload Frame"><RefreshCw size={18} /></button>
                     </div>
                 </div>
 
