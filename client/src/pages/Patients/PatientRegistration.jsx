@@ -85,14 +85,24 @@ export default function PatientRegistration() {
         }
     }, [location.state, defaultDate, defaultTime]);
 
-    // Fetch all tests from the database
+    // Fetch all tests and doctor references from the database
+    const [doctors, setDoctors] = useState([]);
     useEffect(() => {
+        // Fetch Tests
         fetch('http://localhost:5000/api/tests')
             .then(r => r.json())
             .then(data => {
                 if (data.success) setAvailableTests(data.tests);
             })
             .catch(err => console.error('Failed to fetch tests:', err));
+
+        // Fetch Doctors
+        fetch('http://localhost:5000/api/references')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) setDoctors(data.references);
+            })
+            .catch(err => console.error('Failed to fetch references:', err));
     }, []);
 
     const handleInputChange = (e) => {
@@ -352,15 +362,20 @@ export default function PatientRegistration() {
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <Stethoscope className="h-5 w-5 text-slate-400" />
                                         </div>
-                                        <input 
-                                            type="text" 
+                                        <select 
                                             name="referBy"
                                             required
                                             value={formData.referBy}
                                             onChange={handleInputChange}
-                                            placeholder="Doctor's Name / Self" 
-                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-900 outline-none transition-all"
-                                        />
+                                            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-900 outline-none transition-all appearance-none"
+                                        >
+                                            <option value="Self">Self (Direct Patient)</option>
+                                            {doctors.map(doc => (
+                                                <option key={doc._id} value={doc.refByName}>
+                                                    {doc.typeOf} - {doc.refByName}
+                                                </option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 

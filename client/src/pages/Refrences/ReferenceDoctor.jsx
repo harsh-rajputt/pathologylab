@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { UserPlus, RefreshCw, Save, Edit2, Trash2 } from 'lucide-react';
 import { InputField, SelectField } from '../../components/UI/FormControls';
+import { State, City } from 'country-state-city';
 
 export default function ReferenceDoctor() {
     const [formData, setFormData] = useState({
         name: '',
-        typeOf: 'Doctor/Agent/Staff/Pathologist...',
+        typeOf: 'Select Type',
         centerName: 'Main Franchisee',
         hospital: 'Select Hospital',
         pathology: '',
@@ -15,11 +16,31 @@ export default function ReferenceDoctor() {
         email: '',
         contactNumber: '',
         profession: 'Select Profession',
-        state: 'Select State',
-        city: 'Select Your District'
+        state: '',
+        city: ''
     });
 
     const [doctors, setDoctors] = useState([]);
+
+    // Dependent Dropdown states
+    const [indiaStates, setIndiaStates] = useState([]);
+    const [districtOptions, setDistrictOptions] = useState([{ value: '', label: 'Select Your District' }]);
+
+    useEffect(() => {
+        // Load all Indian states eagerly
+        const allStates = State.getStatesOfCountry('IN').map(s => ({ value: s.isoCode, label: s.name }));
+        setIndiaStates([{ value: '', label: 'Select State' }, ...allStates]);
+    }, []);
+
+    // When state changes, update the district options dynamically
+    useEffect(() => {
+        if (formData.state) {
+            const cities = City.getCitiesOfState('IN', formData.state).map(c => ({ value: c.name, label: c.name }));
+            setDistrictOptions([{ value: '', label: 'Select Your District' }, ...cities]);
+        } else {
+            setDistrictOptions([{ value: '', label: 'Select Your District' }]);
+        }
+    }, [formData.state]);
 
     const fetchDoctors = async () => {
         try {
@@ -33,17 +54,36 @@ export default function ReferenceDoctor() {
         }
     };
 
-    React.useEffect(() => {
+    useEffect(() => {
         fetchDoctors();
     }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => {
+            // Auto-reset city if the state is changed
+            if (name === 'state') return { ...prev, [name]: value, city: '' };
+            return { ...prev, [name]: value };
+        });
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
+
+        // **Mandatory Field Validation**
+        if (!formData.name.trim()) {
+            window.alert('Error: "Name" field is mandatory for patient registration.');
+            return;
+        }
+        if (!formData.typeOf || formData.typeOf === 'Select Type' || formData.typeOf === 'Doctor/Agent/Staff/Pathologist...') {
+            window.alert('Error: "Type Of" field is mandatory. Please select a valid reference type.');
+            return;
+        }
+
+        // Find the actual State name from the ISO code before submitting to database
+        const selectedStateObj = indiaStates.find(s => s.value === formData.state);
+        const actualStateName = selectedStateObj ? selectedStateObj.label : '';
+
         const payload = {
             refByName: formData.name,
             typeOf: formData.typeOf.includes('/') ? 'Doctor' : formData.typeOf,
@@ -55,7 +95,7 @@ export default function ReferenceDoctor() {
             email: formData.email,
             contactNumber: formData.contactNumber,
             profession: formData.profession !== 'Select Profession' ? formData.profession : '',
-            state: formData.state !== 'Select State' ? formData.state : '',
+            state: actualStateName !== 'Select State' ? actualStateName : '',
             city: formData.city !== 'Select Your District' ? formData.city : ''
         };
 
@@ -68,7 +108,7 @@ export default function ReferenceDoctor() {
             const data = await res.json();
             if (data.success) {
                 fetchDoctors();
-                setFormData(prev => ({ ...prev, name: '', email: '', contactNumber: '', address: '', pathology: '', radiology: '' }));
+                setFormData(prev => ({ ...prev, name: '', email: '', contactNumber: '', address: '', pathology: '', radiology: '', city: '', state: '' }));
             }
         } catch (error) {
             console.error("Save failed:", error);
@@ -121,11 +161,11 @@ export default function ReferenceDoctor() {
 
                 <form onSubmit={handleSave} className="p-6 md:p-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4 mb-6">
-                        
+
                         {/* Column 1 */}
                         <div className="space-y-4">
                             <InputField label="Name" name="name" value={formData.name} onChange={handleChange} />
-                            <SelectField label="Type Of" name="typeOf" value={formData.typeOf} onChange={handleChange} options={['Doctor/Agent/Staff/Pathologist...', 'Doctor', 'Agent', 'Staff']} />
+                            <SelectField label="Type Of" name="typeOf" value={formData.typeOf} onChange={handleChange} options={['Select Type', 'Pathologist', 'Doctor', 'Agent', 'Staff']} />
                             <SelectField label="Center Name" name="centerName" value={formData.centerName} onChange={handleChange} options={['Main Franchisee', 'Branch 1']} />
                         </div>
 
@@ -146,16 +186,57 @@ export default function ReferenceDoctor() {
                                 <InputField label="Contact Number" name="contactNumber" value={formData.contactNumber} onChange={handleChange} />
                                 <div>{/* Spacer placeholder for the visual split seen in the screenshot UI layout */}</div>
                             </div>
-                            <SelectField label="Profession" name="profession" value={formData.profession} onChange={handleChange} options={['Select Profession', 'Physician', 'Surgeon', 'Dermatologist']} />
+                            <SelectField 
+                                label="Profession" 
+                                name="profession" 
+                                value={formData.profession} 
+                                onChange={handleChange} 
+                                options={[
+                                    'Select Profession', 
+                                    'Anesthesiologist',
+                                    'Cardiologist',
+                                    'Dentist',
+                                    'Dermatologist',
+                                    'Endocrinologist',
+                                    'Gastroenterologist',
+                                    'General Practitioner',
+                                    'Gynecologist',
+                                    'Hematologist',
+                                    'Neurologist',
+                                    'Oncologist',
+                                    'Ophthalmologist',
+                                    'Orthopedist',
+                                    'Pathologist',
+                                    'Pediatrician',
+                                    'Physician',
+                                    'Psychiatrist',
+                                    'Pulmonologist',
+                                    'Radiologist',
+                                    'Surgeon',
+                                    'Urologist'
+                                ]} 
+                            />
                         </div>
 
                         {/* Column 4 */}
                         <div className="space-y-4 h-full flex flex-col justify-between">
                             <div className="space-y-4">
-                                <SelectField label="State" name="state" value={formData.state} onChange={handleChange} options={['Select State', 'Delhi', 'Maharashtra', 'Karnataka']} />
-                                <SelectField label="City" name="city" value={formData.city} onChange={handleChange} options={['Select Your District', 'New Delhi', 'Mumbai', 'Bangalore']} />
+                                <SelectField
+                                    label="State"
+                                    name="state"
+                                    value={formData.state}
+                                    onChange={handleChange}
+                                    options={indiaStates}
+                                />
+                                <SelectField
+                                    label="City/District"
+                                    name="city"
+                                    value={formData.city}
+                                    onChange={handleChange}
+                                    options={districtOptions}
+                                />
                             </div>
-                            
+
                             <div className="pt-2">
                                 <button type="submit" className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow-sm transition-all focus:ring-4 focus:ring-emerald-500/30 flex items-center gap-2">
                                     <Save size={18} /> Save

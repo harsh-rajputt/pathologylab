@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from "framer-motion";
-import { Users, Receipt, IndianRupee, Wallet, ArrowRight, Download, Calendar, Activity } from 'lucide-react';
+import { Users, Receipt, IndianRupee, Wallet, ArrowRight, Download, Calendar, Activity, User, LogOut } from 'lucide-react';
 
 export default function Dashboard() {
     const [stats, setStats] = useState([
@@ -19,7 +19,7 @@ export default function Dashboard() {
                 const data = await res.json();
                 if (data.success) {
                     const patients = data.patients;
-                    
+
                     const now = new Date();
                     const currentMonth = now.getMonth();
                     const currentYear = now.getFullYear();
@@ -76,14 +76,14 @@ export default function Dashboard() {
                     const dailyArr = Object.entries(dailyMap).map(([date, data], index) => ({
                         id: index + 1, date, reg: data.reg, bill: data.bill.toFixed(2), coll: data.coll.toFixed(2), dues: data.dues.toFixed(2)
                     }));
-                    setDailyData(dailyArr.sort((a,b) => b.id - a.id));
+                    setDailyData(dailyArr.sort((a, b) => b.id - a.id));
 
                     let tReg = 0, tBill = 0, tColl = 0, tDues = 0;
                     const monthlyArr = Object.entries(monthlyMap).map(([month, data], index) => {
                         tReg += data.reg; tBill += data.bill; tColl += data.coll; tDues += data.dues;
                         return { id: index + 1, month, reg: data.reg, bill: data.bill.toFixed(2), coll: data.coll.toFixed(2), dues: data.dues.toFixed(2) };
                     });
-                    
+
                     if (monthlyArr.length > 0) {
                         monthlyArr.push({ id: monthlyArr.length + 1, month: "Total : -", reg: tReg, bill: tBill.toFixed(2), coll: tColl.toFixed(2), dues: tDues.toFixed(2), isTotal: true });
                     }
@@ -106,23 +106,32 @@ export default function Dashboard() {
                     transition={{ duration: 0.5 }}
                 >
                     <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard Overview</h1>
-                    <p className="text-slate-500 mt-1">Here's what's happening in your lab today.</p>
                 </motion.div>
-                
-                <motion.div 
+
+                <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.5 }}
                     className="flex items-center gap-3"
                 >
-                    <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl shadow-sm hover:bg-slate-50 transition-all font-medium flex items-center gap-2 group">
-                        <Calendar size={18} className="text-slate-500 group-hover:text-indigo-600 transition-colors" />
-                        <span>Filter by Date</span>
-                    </button>
-                    <button className="px-4 py-2 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 transition-all font-medium flex items-center gap-2 shadow-indigo-600/20 group">
-                        <Download size={18} className="group-hover:-translate-y-0.5 transition-transform" />
-                        <span>Export Report</span>
-                    </button>
+                    {/* User Profile Dropdown Menu */}
+                    <div className="relative group z-50">
+                        <button className="p-3 bg-white border border-slate-200 text-slate-700 rounded-full shadow-sm hover:bg-slate-50 transition-all flex items-center justify-center group-hover:ring-4 group-hover:ring-indigo-500/10">
+                            <User size={20} className="text-slate-600" />
+                        </button>
+
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right translate-y-2 group-hover:translate-y-0">
+                            <div className="p-4 border-b border-slate-100 bg-slate-50/50 rounded-t-xl">
+                                <p className="text-xs text-slate-500 font-semibold mb-0.5 uppercase tracking-wider">Logged in as</p>
+                                <p className="text-[15px] font-bold text-slate-900 tracking-tight">Admin User</p>
+                            </div>
+                            <div className="p-2">
+                                <button className="w-full text-left px-3 py-2 text-sm text-rose-600 font-semibold hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-2">
+                                    <LogOut size={16} strokeWidth={2.5} /> Logout
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </motion.div>
             </header>
 
@@ -138,7 +147,7 @@ export default function Dashboard() {
                     >
                         {/* Background Decoration */}
                         <div className={`absolute -right-6 -top-6 w-28 h-28 bg-gradient-to-br ${stat.gradient} rounded-full opacity-[0.08] group-hover:scale-[1.8] group-hover:opacity-10 transition-all duration-700 ease-in-out`} />
-                        
+
                         <div className="flex justify-between items-start mb-6">
                             <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${stat.gradient} text-white shadow-lg ${stat.shadow}`}>
                                 <stat.icon size={26} strokeWidth={2.5} />
@@ -147,12 +156,12 @@ export default function Dashboard() {
                                 {stat.trend}
                             </span>
                         </div>
-                        
+
                         <div>
                             <h3 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-1.5">{stat.value}</h3>
                             <p className="text-sm font-semibold text-slate-500/80">{stat.title}</p>
                         </div>
-                        
+
                         <div className="mt-6 pt-4 border-t border-slate-100/80 relative z-10">
                             <button className="text-sm font-bold text-indigo-600 flex items-center gap-1 group-hover:gap-2 transition-all">
                                 View Details <ArrowRight size={16} strokeWidth={2.5} />
