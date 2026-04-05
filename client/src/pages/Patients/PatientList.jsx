@@ -14,7 +14,20 @@ export default function PatientList() {
         fromDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
         uptoDate: new Date().toISOString().split('T')[0],
         searchType: '',
+        searchType: '',
         user: ''
+    });
+
+    // Dues Payment State
+    const [targetDuesPatient, setTargetDuesPatient] = useState(null);
+    const [duesFormData, setDuesFormData] = useState({
+        mode: 'Cash',
+        amount: '',
+        discount: '0',
+        transactionId: '',
+        remarks: '',
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toTimeString().slice(0,5)
     });
 
     const fetchPatients = async () => {
@@ -348,8 +361,224 @@ export default function PatientList() {
                                     </button>
                                 )}
                                 
-                                <button className="w-full py-2.5 bg-[#ef4444] hover:bg-[#dc2626] text-white font-medium rounded transition-colors shadow-sm">
-                                    Amount ₹{Number(selectedPatient.amounts?.dues || 0)} Dues
+                                {Number(selectedPatient.amounts?.dues || 0) > 0 && (
+                                    <button 
+                                        onClick={() => {
+                                            setTargetDuesPatient(selectedPatient);
+                                            setDuesFormData(prev => ({
+                                                ...prev, 
+                                                amount: Number(selectedPatient.amounts?.dues || 0)
+                                            }));
+                                            setSelectedPatient(null);
+                                        }}
+                                        className="w-full py-2.5 bg-[#ef4444] hover:bg-[#dc2626] text-white font-medium rounded transition-colors shadow-sm"
+                                    >
+                                        Amount ₹{Number(selectedPatient.amounts?.dues || 0)} Dues
+                                    </button>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Premium Dues Payment Modal */}
+            <AnimatePresence>
+                {targetDuesPatient && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                            className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200"
+                        >
+                            {/* Premium Header */}
+                            <div className="bg-rose-600 text-white px-5 py-4 flex items-center justify-between shadow-sm">
+                                <h3 className="font-bold text-lg flex items-center gap-2">
+                                    <span className="text-rose-100">₹</span> Dues Payment
+                                </h3>
+                                <button 
+                                    onClick={() => setTargetDuesPatient(null)}
+                                    className="p-1.5 bg-rose-700/50 hover:bg-rose-700 rounded-lg transition-colors"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-5">
+                                {/* Informational Banner */}
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg grid grid-cols-2 gap-y-3 text-sm">
+                                    <div>
+                                        <span className="text-slate-500 font-medium block text-xs tracking-wide uppercase mb-0.5">Reg Date</span>
+                                        <span className="text-slate-800 font-bold">{formatDate(targetDuesPatient.createdAt)}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-500 font-medium block text-xs tracking-wide uppercase mb-0.5">Reg Number</span>
+                                        <span className="text-slate-800 font-bold">{targetDuesPatient.labId || targetDuesPatient.id}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-500 font-medium block text-xs tracking-wide uppercase mb-0.5">Name</span>
+                                        <span className="text-slate-800 font-bold truncate block">{targetDuesPatient.fullName}</span>
+                                    </div>
+                                    <div>
+                                        <span className="text-slate-500 font-medium block text-xs tracking-wide uppercase mb-0.5 text-rose-500">Total Dues</span>
+                                        <span className="text-rose-600 font-bold text-base block">₹{Number(targetDuesPatient.amounts?.dues || 0)}</span>
+                                    </div>
+                                </div>
+
+                                {/* Form Layout */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1 md:col-span-2">
+                                        <label className="text-xs font-semibold text-slate-700">Payment Mode</label>
+                                        <select 
+                                            value={duesFormData.mode}
+                                            onChange={(e) => setDuesFormData({...duesFormData, mode: e.target.value})}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm"
+                                        >
+                                            <option>Cash</option>
+                                            <option>UPI / Online</option>
+                                            <option>Card</option>
+                                            <option>Bank Transfer</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold text-slate-700 flex justify-between">
+                                            Amount To Receive <span className="text-slate-400 font-normal">₹</span>
+                                        </label>
+                                        <input 
+                                            type="number" 
+                                            value={duesFormData.amount}
+                                            onChange={(e) => setDuesFormData({...duesFormData, amount: e.target.value})}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-800 font-medium" 
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold text-slate-700 flex justify-between">
+                                            Discount <span className="text-slate-400 font-normal">₹</span>
+                                        </label>
+                                        <input 
+                                            type="number" 
+                                            value={duesFormData.discount}
+                                            onChange={(e) => setDuesFormData({...duesFormData, discount: e.target.value})}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-800" 
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1 md:col-span-2">
+                                        <label className="text-xs font-semibold text-slate-700">Transaction ID</label>
+                                        <input 
+                                            type="text" 
+                                            value={duesFormData.transactionId}
+                                            onChange={(e) => setDuesFormData({...duesFormData, transactionId: e.target.value})}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-800" 
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1 md:col-span-2">
+                                        <label className="text-xs font-semibold text-slate-700">Remarks</label>
+                                        <input 
+                                            type="text" 
+                                            value={duesFormData.remarks}
+                                            onChange={(e) => setDuesFormData({...duesFormData, remarks: e.target.value})}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-800" 
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold text-slate-700">Receiving Date</label>
+                                        <input 
+                                            type="date"
+                                            value={duesFormData.date}
+                                            onChange={(e) => setDuesFormData({...duesFormData, date: e.target.value})}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-800" 
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-semibold text-slate-700">Time</label>
+                                        <input 
+                                            type="time" 
+                                            value={duesFormData.time}
+                                            onChange={(e) => setDuesFormData({...duesFormData, time: e.target.value})}
+                                            className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 text-sm text-slate-800" 
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Action Footer */}
+                            <div className="bg-slate-50 border-t border-slate-200 p-4 flex gap-3 flex-wrap sm:flex-nowrap">
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const amountToRecv = Number(duesFormData.amount || 0);
+                                            const additionalDiscount = Number(duesFormData.discount || 0);
+                                            const totalToDeductFromDues = amountToRecv + additionalDiscount;
+                                            
+                                            if (totalToDeductFromDues > Number(targetDuesPatient.amounts?.dues || 0)) {
+                                                window.alert("Entered amount + discount cannot exceed the total outstanding dues.");
+                                                return;
+                                            }
+
+                                            // Calculate current discount absolute value to safely stack new extra discount inputs
+                                            const currentTotalDiscount = targetDuesPatient.amounts?.discountType === '₹' 
+                                                ? Number(targetDuesPatient.amounts?.discount || 0)
+                                                : ((Number(targetDuesPatient.amounts?.totalAmount || 0) * Number(targetDuesPatient.amounts?.discount || 0)) / 100);
+
+                                            const updatedAmounts = {
+                                                ...targetDuesPatient.amounts,
+                                                received: Number(targetDuesPatient.amounts?.received || 0) + amountToRecv,
+                                                dues: Number(targetDuesPatient.amounts?.dues || 0) - totalToDeductFromDues,
+                                                discount: currentTotalDiscount + additionalDiscount,
+                                                discountType: '₹' // Force to flat absolute rupees when dynamically re-calculating dues mid-flight
+                                            };
+
+                                            const payload = {
+                                                ...targetDuesPatient,
+                                                amounts: updatedAmounts,
+                                                remarks: duesFormData.remarks ? `${targetDuesPatient.remarks ? targetDuesPatient.remarks + ' | ' : ''}Dues paid (${duesFormData.mode}): ${duesFormData.remarks}` : targetDuesPatient.remarks
+                                            };
+
+                                            const res = await fetch(`http://localhost:5000/api/patients/${targetDuesPatient._id || targetDuesPatient.id}`, {
+                                                method: 'PUT',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(payload)
+                                            });
+
+                                            const data = await res.json();
+                                            if (data.success) {
+                                                // Sync the local Grid state
+                                                setPatients(patients.map(p => (p._id === targetDuesPatient._id || p.id === targetDuesPatient.id) ? { ...p, amounts: updatedAmounts, remarks: payload.remarks } : p));
+                                                setTargetDuesPatient(null);
+                                            } else {
+                                                window.alert('Failed to clear dues from server.');
+                                            }
+                                        } catch (error) {
+                                            console.error("Dues Saving Error:", error);
+                                            window.alert('An error occurred while saving dues. Check console for details.');
+                                        }
+                                    }}
+                                    className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2.5 rounded-lg shadow-sm shadow-rose-600/30 transition-colors"
+                                >
+                                    Save Record
+                                </button>
+                                <button 
+                                    onClick={() => setTargetDuesPatient(null)}
+                                    className="px-6 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-2.5 rounded-lg transition-colors border border-slate-300"
+                                >
+                                    Back
+                                </button>
+                                <button 
+                                    onClick={() => setDuesFormData({
+                                        mode: 'Cash', amount: Number(targetDuesPatient.amounts?.dues || 0), discount: '0', 
+                                        transactionId: '', remarks: '', 
+                                        date: new Date().toISOString().split('T')[0], time: new Date().toTimeString().slice(0,5)
+                                    })}
+                                    className="px-4 bg-white hover:bg-slate-50 text-slate-600 font-medium py-2.5 rounded-lg transition-colors border border-slate-200"
+                                >
+                                    Reset
                                 </button>
                             </div>
                         </motion.div>

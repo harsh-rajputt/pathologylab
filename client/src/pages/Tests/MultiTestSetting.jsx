@@ -103,7 +103,10 @@ export default function MultiTestSetting() {
     };
 
     // Filtered Lists
-    const parentTests = tests.filter(t => t.testFormat === 'Multiple' && t.testName.toLowerCase().includes(searchLeft.toLowerCase()));
+    const parentTests = tests.filter(t => 
+        (t.testFormat === 'Multiple' || t.testFormat === 'Heading') && 
+        t.testName.toLowerCase().includes(searchLeft.toLowerCase())
+    );
     const activeParent = tests.find(t => t._id === activeParentId);
     
     // Middle: show all non-parent tests (Single, Heading, etc.) not yet linked

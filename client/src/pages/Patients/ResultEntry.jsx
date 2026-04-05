@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Save, ArrowLeft, FlaskConical, User, AlertTriangle, CheckCircle2, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Save, ArrowLeft, FlaskConical, User, AlertTriangle, CheckCircle2, ArrowUpDown, Trash2, List } from 'lucide-react';
 
 export default function ResultEntry() {
     const location = useLocation();
@@ -135,12 +135,12 @@ export default function ResultEntry() {
                         </div>
                     </div>
                     <button
-                        onClick={handleSave}
-                        disabled={isSaving}
-                        className="flex items-center gap-2 px-5 py-2 bg-indigo-700 text-white font-bold rounded hover:bg-indigo-800 shadow transition-colors disabled:opacity-60"
+                        onClick={() => navigate('/patients/list')}
+                        className="flex items-center gap-2 px-5 py-2 bg-slate-800 text-white font-bold rounded hover:bg-slate-900 shadow transition-colors"
+                        title="Back to Patient List"
                     >
-                        {saved ? <CheckCircle2 size={16} /> : <Save size={16} />}
-                        {saved ? 'Saved!' : isSaving ? 'Saving...' : 'Save Results'}
+                        <List size={18} />
+                        Patient List
                     </button>
                 </div>
 

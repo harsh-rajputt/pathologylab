@@ -79,21 +79,37 @@ export default function TestEntry() {
     }, [location.state]);
 
     const [unitOptions, setUnitOptions] = useState(["Select Unit"]);
+    const [wingOptions, setWingOptions] = useState(["PATHOLOGY", "RADIOLOGY", "ECG", "CT SCAN"]);
+    const [departmentOptions, setDepartmentOptions] = useState(["Select Department", "HAEMATOLOGY", "BIOCHEMESTRY"]);
 
     useEffect(() => {
-        const fetchUnits = async () => {
+        const fetchMetadata = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/test-units');
-                const data = await res.json();
-                if (data.success) {
-                    const dynamicUnits = data.units.map(u => u.name);
-                    setUnitOptions(["Select Unit", ...dynamicUnits]);
+                // Fetch Units
+                const resUnits = await fetch('http://localhost:5000/api/test-units');
+                const dataUnits = await resUnits.json();
+                if (dataUnits.success) {
+                    setUnitOptions(["Select Unit", ...dataUnits.units.map(u => u.name)]);
+                }
+
+                // Fetch Wings
+                const resWings = await fetch('http://localhost:5000/api/wings');
+                const dataWings = await resWings.json();
+                if (dataWings.success && dataWings.wings?.length > 0) {
+                    setWingOptions(dataWings.wings.map(w => w.name));
+                }
+
+                // Fetch Departments
+                const resDepts = await fetch('http://localhost:5000/api/departments');
+                const dataDepts = await resDepts.json();
+                if (dataDepts.success && dataDepts.departments?.length > 0) {
+                    setDepartmentOptions(["Select Department", ...dataDepts.departments.map(d => d.name)]);
                 }
             } catch (error) {
-                console.error("Failed to fetch units", error);
+                console.error("Failed to fetch dynamic test metadata options", error);
             }
         };
-        fetchUnits();
+        fetchMetadata();
     }, []);
 
     const handleAgeGroupChange = (id, field, value) => {
@@ -206,8 +222,8 @@ export default function TestEntry() {
                         {/* Column 1 */}
                         <div>
                             <InputField label="Test Name" name="testName" value={formData.testName} onChange={handleChange} />
-                            <SelectField label="Wing" name="wing" value={formData.wing} onChange={handleChange} options={["PATHOLOGY", "RADIOLOGY", "ECG", "CT SCAN"]} />
-                            <SelectField label="Department" name="department" value={formData.department} onChange={handleChange} options={["Select Department", "HAEMATOLOGY", "BIOCHEMESTRY"]} />
+                            <SelectField label="Wing" name="wing" value={formData.wing} onChange={handleChange} options={wingOptions} />
+                            <SelectField label="Department" name="department" value={formData.department} onChange={handleChange} options={departmentOptions} />
                             <SelectField label="Unit" name="unit" value={formData.unit} onChange={handleChange} options={unitOptions} />
                             <SelectField label="Test Format" name="testFormat" value={formData.testFormat} onChange={handleChange} options={["Single", "Multiple", "Heading", "Profile"]} />
                         </div>
