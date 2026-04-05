@@ -24,14 +24,7 @@ export default function TestEntry() {
     });
 
     const [isAgeGroupModalOpen, setIsAgeGroupModalOpen] = useState(false);
-    const [ageGroups, setAgeGroups] = useState([
-        { id: 1, category: 'Male', normalRange: '0-0', lower: '0', higher: '0' },
-        { id: 2, category: 'Female', normalRange: '0-0', lower: '0', higher: '0' },
-        { id: 3, category: 'Child - M', normalRange: '0-0', lower: '0', higher: '0' },
-        { id: 4, category: 'Child - F', normalRange: '0-0', lower: '0', higher: '0' },
-        { id: 5, category: 'Infant-M', normalRange: '0-0', lower: '0', higher: '0' },
-        { id: 6, category: 'Infant-F', normalRange: '0-0', lower: '0', higher: '0' },
-    ]);
+    const [ageGroups, setAgeGroups] = useState([]);
 
     useEffect(() => {
         const fetchTestData = async (id) => {
@@ -56,7 +49,13 @@ export default function TestEntry() {
                     }));
 
                     if (t.ageGroups && Array.isArray(t.ageGroups) && t.ageGroups.length > 0) {
-                        setAgeGroups(t.ageGroups);
+                        setAgeGroups(prev => {
+                            if (prev.length === 0) return t.ageGroups; // If metadata not loaded yet
+                            return prev.map(dbGroup => {
+                                const savedOverride = t.ageGroups.find(saved => saved.category === dbGroup.category);
+                                return savedOverride ? { ...dbGroup, lower: savedOverride.lower, higher: savedOverride.higher } : dbGroup;
+                            });
+                        });
                     }
                 }
             } catch (error) {
@@ -104,6 +103,27 @@ export default function TestEntry() {
                 const dataDepts = await resDepts.json();
                 if (dataDepts.success && dataDepts.departments?.length > 0) {
                     setDepartmentOptions(["Select Department", ...dataDepts.departments.map(d => d.name)]);
+                }
+
+                // Fetch Age Categories for Normal Range Matrix
+                const resAge = await fetch('http://localhost:5000/api/age-categories');
+                const dataAge = await resAge.json();
+                if (dataAge.success && dataAge.categories?.length > 0) {
+                    const mappedGroups = dataAge.categories.map((c, idx) => ({
+                        id: c._id || (idx + 1),
+                        category: c.name,
+                        normalRange: `${c.ageStart}-${c.ageEnd}`,
+                        lower: '0',
+                        higher: '0'
+                    }));
+                    
+                    // Carefully merge with existing test config if already loaded (edit mode edge case)
+                    setAgeGroups(prev => {
+                        return mappedGroups.map(dbGroup => {
+                            const existing = prev.find(p => p.category === dbGroup.category);
+                            return existing ? { ...dbGroup, lower: existing.lower, higher: existing.higher } : dbGroup;
+                        });
+                    });
                 }
             } catch (error) {
                 console.error("Failed to fetch dynamic test metadata options", error);
@@ -159,14 +179,7 @@ export default function TestEntry() {
                     resultBold: false, paragraphResult: false, pageBreak: false, showShortCode: false,
                     testId: '0', testCode: '', shortCode: ''
                 });
-                setAgeGroups([
-                    { id: 1, category: 'Male', normalRange: '0-0', lower: '0', higher: '0' },
-                    { id: 2, category: 'Female', normalRange: '0-0', lower: '0', higher: '0' },
-                    { id: 3, category: 'Child - M', normalRange: '0-0', lower: '0', higher: '0' },
-                    { id: 4, category: 'Child - F', normalRange: '0-0', lower: '0', higher: '0' },
-                    { id: 5, category: 'Infant-M', normalRange: '0-0', lower: '0', higher: '0' },
-                    { id: 6, category: 'Infant-F', normalRange: '0-0', lower: '0', higher: '0' },
-                ]);
+                setAgeGroups(prev => prev.map(group => ({ ...group, lower: '0', higher: '0' })));
             } else {
                 alert(data.error || "Failed to save test configuration");
             }

@@ -12,6 +12,7 @@ import TestEntry from './pages/Tests/TestEntry';
 import TestUnit from './pages/Tests/TestUnit';
 import MultiTestSetting from './pages/Tests/MultiTestSetting';
 import ProfileSetting from './pages/Tests/ProfileSetting';
+import AgeCategory from './pages/Tests/AgeCategory';
 import ReferenceDoctor from './pages/Refrences/ReferenceDoctor';
 import CollectionCenter from './pages/Refrences/CollectionCenter';
 import Profile from './pages/Control center/Profile';
@@ -44,6 +45,7 @@ function Layout() {
           <Route path="/tests/unit"        element={<TestUnit />} />
           <Route path="/tests/multi-test"  element={<MultiTestSetting />} />
           <Route path="/tests/profile"     element={<ProfileSetting />} />
+          <Route path="/tests/age-category" element={<AgeCategory />} />
           <Route path="/references/doctor" element={<ReferenceDoctor />} />
           <Route path="/references/collection-center" element={<CollectionCenter />} />
           <Route path="/control-center/profile"           element={<Profile />} />
