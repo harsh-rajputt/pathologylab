@@ -397,7 +397,7 @@ export default function TestEntry() {
                                                         className="border-b border-slate-100 hover:bg-fuchsia-50/30 transition-colors"
                                                     >
                                                         <td className="py-3 px-4 text-center">
-                                                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 text-slate-500 font-bold text-xs">{group.id}</span>
+                                                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-slate-100 text-slate-500 font-bold text-xs">{index + 1}</span>
                                                         </td>
                                                         <td className="py-3 px-4 text-slate-800 font-bold text-sm">
                                                             {group.category}

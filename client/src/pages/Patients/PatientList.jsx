@@ -549,8 +549,8 @@ export default function PatientList() {
 
                                             const data = await res.json();
                                             if (data.success) {
-                                                // Sync the local Grid state
-                                                setPatients(patients.map(p => (p._id === targetDuesPatient._id || p.id === targetDuesPatient.id) ? { ...p, amounts: updatedAmounts, remarks: payload.remarks } : p));
+                                                // Sync the local Grid state with final server data
+                                                setPatients(patients.map(p => (p._id === targetDuesPatient._id || p.id === targetDuesPatient.id) ? data.patient : p));
                                                 setTargetDuesPatient(null);
                                             } else {
                                                 window.alert('Failed to clear dues from server.');

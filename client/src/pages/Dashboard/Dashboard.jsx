@@ -126,7 +126,15 @@ export default function Dashboard() {
                                 <p className="text-[15px] font-bold text-slate-900 tracking-tight">Admin User</p>
                             </div>
                             <div className="p-2">
-                                <button className="w-full text-left px-3 py-2 text-sm text-rose-600 font-semibold hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-2">
+                                <button 
+                                    onClick={() => {
+                                        if (window.confirm('Are you sure you want to log out?')) {
+                                            // Handle logout logic here (e.g., clear localStorage, cookies, etc.)
+                                            window.location.href = '/'; 
+                                        }
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm text-rose-600 font-semibold hover:bg-rose-50 rounded-lg transition-colors flex items-center gap-2"
+                                >
                                     <LogOut size={16} strokeWidth={2.5} /> Logout
                                 </button>
                             </div>

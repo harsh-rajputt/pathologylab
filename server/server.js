@@ -1,14 +1,8 @@
-const express = require('express');
+const app = require('./app');
 const mongoose = require('mongoose');
-const cors = require('cors');
 require('dotenv').config();
 
-const app = express();
 const PORT = process.env.PORT || 5000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
 
 // Database Connection
 // Defaults to a local MongoDB instance designed for the local client software installation
@@ -17,29 +11,6 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/pathol
 mongoose.connect(MONGODB_URI)
   .then(() => console.log('✅ Connected to Local MongoDB Database'))
   .catch(err => console.error('❌ MongoDB Connection Error. Is MongoDB installed and running?', err));
-
-// Import Express Routes
-const wingRoutes = require('./src/routes/testWingRoutes');
-const departmentRoutes = require('./src/routes/testDepartmentRoutes');
-const patientRoutes = require('./src/routes/patientRoutes');
-const testUnitRoutes = require('./src/routes/testUnitRoutes');
-const testRoutes = require('./src/routes/testRoutes');
-const referenceDoctorRoutes = require('./src/routes/referenceDoctorRoutes');
-const ageCategoryRoutes = require('./src/routes/ageCategoryRoutes');
-
-// Basic Architecture Route
-app.get('/api/health', (req, res) => {
-    res.json({ status: 'active', message: 'Pathology Lab Local Server is running flawlessly' });
-});
-
-// Configure API Routes
-app.use('/api/wings', wingRoutes);
-app.use('/api/departments', departmentRoutes);
-app.use('/api/patients', patientRoutes);
-app.use('/api/test-units', testUnitRoutes);
-app.use('/api/tests', testRoutes);
-app.use('/api/references', referenceDoctorRoutes);
-app.use('/api/age-categories', ageCategoryRoutes);
 
 // Start the Backend Node Server
 app.listen(PORT, () => {

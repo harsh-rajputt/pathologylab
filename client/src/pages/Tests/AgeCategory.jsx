@@ -184,13 +184,32 @@ export default function AgeCategory() {
                                     {categories.map((cat, i) => (
                                         <tr key={cat._id || i} className={`border-b border-slate-100 hover:bg-fuchsia-50/50 transition-colors ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
                                             <td className="px-5 py-3 text-center">
-                                                <button 
-                                                    onClick={() => handleEdit(cat)}
-                                                    className="p-1.5 text-blue-500 hover:text-white hover:bg-blue-500 rounded transition-colors"
-                                                    title="Edit Category"
-                                                >
-                                                    <Edit2 size={15} strokeWidth={2.5} />
-                                                </button>
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <button 
+                                                        onClick={() => handleEdit(cat)}
+                                                        className="p-1.5 text-blue-500 hover:text-white hover:bg-blue-500 rounded transition-colors"
+                                                        title="Edit Category"
+                                                    >
+                                                        <Edit2 size={15} strokeWidth={2.5} />
+                                                    </button>
+                                                    <button 
+                                                        onClick={async () => {
+                                                            if (window.confirm('Delete this category?')) {
+                                                                try {
+                                                                    const res = await fetch(`http://localhost:5000/api/age-categories/${cat._id}`, { method: 'DELETE' });
+                                                                    if ((await res.json()).success) {
+                                                                        showNotification('Category removed.', 'success');
+                                                                        fetchAgeCategories();
+                                                                    }
+                                                                } catch (err) { console.error(err); }
+                                                            }
+                                                        }}
+                                                        className="p-1.5 text-rose-500 hover:text-white hover:bg-rose-500 rounded transition-colors"
+                                                        title="Delete Category"
+                                                    >
+                                                        <X size={15} strokeWidth={2.5} />
+                                                    </button>
+                                                </div>
                                             </td>
                                             <td className="px-5 py-3 font-bold text-slate-800">{cat.name}</td>
                                             <td className="px-5 py-3 text-slate-600 font-mono text-sm">{cat.ageStart}-{cat.ageEnd}</td>

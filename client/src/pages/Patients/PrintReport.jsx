@@ -4,10 +4,31 @@ export default function PrintReport() {
     const [printData, setPrintData] = useState(null);
     const [allTests, setAllTests]   = useState([]);
     const [rows, setRows]           = useState([]);
+    const [design, setDesign]       = useState({
+        testHeading: 'Test Name',
+        findingHeader: 'Result',
+        findingAlign: 'Left',
+        unitHeader: 'Unit',
+        unitAlign: 'Left',
+        rangeHeader: 'Normal Range',
+        rangeAlign: 'Left',
+        fontFamily: 'Arial',
+        gapBetween: '17',
+        fontSize: '12',
+        methodFontSize: '8',
+        deptStyle: 'Center',
+        printBorder: false
+    });
     const printed = useRef(false);
 
     useEffect(() => {
-        // Read data passed from ResultPrint (via localStorage — shared across tabs)
+        // Read design settings
+        const designRaw = localStorage.getItem('reportDesignSettings');
+        if (designRaw) {
+            try { setDesign(JSON.parse(designRaw)); } catch {}
+        }
+
+        // Read data passed from ResultPrint
         const raw = localStorage.getItem('printData');
         if (raw) {
             try { setPrintData(JSON.parse(raw)); } catch {}
@@ -86,7 +107,7 @@ export default function PrintReport() {
                     .page { box-shadow: none !important; margin: 0 !important; }
                 }
                 @page { size: A4; margin: 10mm; }
-                body { font-family: Arial, sans-serif; background: #e5e7eb; }
+                body { font-family: '${design.fontFamily}', sans-serif; background: #e5e7eb; }
             `}</style>
 
             {/* Print Button (hidden on print) */}
@@ -113,9 +134,11 @@ export default function PrintReport() {
                 background: '#fff',
                 boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
                 padding: '0',
-                fontSize: '12px',
+                fontSize: `${design.fontSize}px`,
+                fontFamily: `'${design.fontFamily}', sans-serif`,
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                border: design.printBorder ? '1px solid #000' : 'none'
             }}>
 
                 {/* ── HEADER MARGIN FOR LETTERHEAD ── */}
@@ -128,8 +151,7 @@ export default function PrintReport() {
                         padding: '8px 12px',
                         display: 'flex',
                         justifyContent: 'space-between',
-                        fontSize: '11px',
-                        fontFamily: 'Arial, sans-serif'
+                        fontSize: '11px'
                     }}>
                         {/* LEFT COLUMN */}
                         <div style={{ display: 'grid', gridTemplateColumns: '110px 10px 1fr', gap: '3px 0', lineHeight: '1.2' }}>
@@ -168,30 +190,34 @@ export default function PrintReport() {
 
                 {/* ── RESULTS TABLE ── */}
                 <div style={{ padding: '0 20px', flex: 1 }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', fontFamily: 'Arial, sans-serif' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: `${design.fontSize}px` }}>
                         <thead>
                             <tr style={{ borderTop: '2px solid #000', borderBottom: '1px solid #000' }}>
-                                <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', width: '40%' }}>Test Name</th>
-                                <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', width: '20%' }}>Result</th>
-                                <th style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 'bold', width: '20%' }}>Unit</th>
-                                <th style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 'bold', width: '20%' }}>Normal Range</th>
+                                <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', width: '40%' }}>{design.testHeading}</th>
+                                <th style={{ padding: '6px 8px', textAlign: design.findingAlign.toLowerCase(), fontWeight: 'bold', width: '20%' }}>{design.findingHeader}</th>
+                                <th style={{ padding: '6px 8px', textAlign: design.unitAlign.toLowerCase(), fontWeight: 'bold', width: '20%' }}>{design.unitHeader}</th>
+                                <th style={{ padding: '6px 8px', textAlign: design.rangeAlign.toLowerCase(), fontWeight: 'bold', width: '20%' }}>{design.rangeHeader}</th>
                             </tr>
                         </thead>
                         <tbody>
                             {rows.map((row, i) => {
-                                // GROUP header row
+                                // GROUP header row (Department/Wing)
                                 if (row.type === 'group') {
                                     return (
                                         <tr key={`g-${i}`}>
-                                            <td colSpan="4" style={{ padding: '12px 8px 6px', textAlign: 'center', fontWeight: '900' }}>
-                                                <div style={{ fontSize: '12px' }}>[ {row.name.toUpperCase()} * ]</div>
-                                                <div style={{ fontSize: '11px', marginTop: '2px' }}>HAEMATOLOGY</div>
+                                            <td colSpan="4" style={{ 
+                                                padding: `${design.gapBetween / 2}px 8px 6px`, 
+                                                textAlign: design.deptStyle.toLowerCase().includes('center') ? 'center' : 'left', 
+                                                fontWeight: '900', 
+                                                borderBottom: design.deptStyle.toLowerCase().includes('underline') ? '1px solid #000' : 'none' 
+                                            }}>
+                                                <div style={{ fontSize: `${parseInt(design.fontSize) + 2}px` }}>[ {row.name.toUpperCase()} * ]</div>
                                             </td>
                                         </tr>
                                     );
                                 }
 
-                                // SUBHEADING row
+                                // SUBHEADING row (e.g., Differential Count)
                                 if (row.type === 'subheading') {
                                     return (
                                         <tr key={`s-${i}`}>
@@ -202,7 +228,7 @@ export default function PrintReport() {
                                     );
                                 }
 
-                                // PARAM row
+                                // PARAM row (Individual test values)
                                 paramNo++;
                                 const def      = row.def;
                                 const status   = getStatus(def, row.name);
@@ -225,7 +251,7 @@ export default function PrintReport() {
 
                                 return (
                                     <React.Fragment key={`frag-${i}`}>
-                                        <tr>
+                                        <tr style={{ borderBottom: design.multiUnderline && !row.isChild ? '1px solid #eee' : 'none' }}>
                                             <td style={{
                                                 padding: '4px 8px',
                                                 fontWeight: isBold ? '900' : '500',
@@ -234,20 +260,20 @@ export default function PrintReport() {
                                             }}>
                                                 {row.name}
                                             </td>
-                                            <td style={{ padding: '4px 8px', textAlign: 'left' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center' }}>
+                                            <td style={{ padding: '4px 8px', textAlign: design.findingAlign.toLowerCase() }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: design.findingAlign.toLowerCase() === 'center' ? 'center' : 'flex-start' }}>
                                                     <span style={{ width: '16px', fontWeight: '900', display: 'inline-block' }}>
                                                         {status === 'high' ? 'H' : status === 'low' ? 'L' : ''}
                                                     </span>
-                                                    <span style={{ fontWeight: (status !== 'normal' && val !== '') || isBold ? '900' : '500' }}>
+                                                    <span style={{ fontWeight: (status !== 'normal' && val !== '' && design.highlightBold) || isBold ? '900' : '500' }}>
                                                         {val !== '' ? val : '-'}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td style={{ padding: '4px 8px', textAlign: 'center', color: '#000' }}>
+                                            <td style={{ padding: '4px 8px', textAlign: design.unitAlign.toLowerCase(), color: '#000' }}>
                                                 {def?.unit || ''}
                                             </td>
-                                            <td style={{ padding: '4px 8px', textAlign: 'center', color: '#000' }}>
+                                            <td style={{ padding: '4px 8px', textAlign: design.rangeAlign.toLowerCase(), color: '#000' }}>
                                                 {rangeTxt || ''}
                                             </td>
                                         </tr>
@@ -255,10 +281,10 @@ export default function PrintReport() {
                                             <tr>
                                                 <td colSpan="5" style={{
                                                     padding: '8px 14px',
-                                                    background: '#fffbeb',
-                                                    borderBottom: '2px solid #fde68a',
-                                                    fontSize: '10px',
-                                                    color: '#78350f',
+                                                    background: '#fafafa',
+                                                    borderBottom: '1px solid #eee',
+                                                    fontSize: `${parseInt(design.fontSize) - 2}px`,
+                                                    color: '#333',
                                                 }}>
                                                     <div 
                                                         style={{ fontStyle: 'italic', lineHeight: '1.4' }}
