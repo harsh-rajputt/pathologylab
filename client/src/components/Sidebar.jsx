@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, FlaskConical, BookOpen, Settings, Database, 
   ChevronDown, UserPlus, List, Building2, Network, ClipboardList, 
   FileEdit, MessageSquare, SquarePlus, User, Globe, Pin, Gamepad2, 
-  Clock, UserCog, Layers, Boxes, ListChecks, UsersRound
+  Clock, UserCog, Layers, Boxes, ListChecks, UsersRound, AlertCircle
 } from 'lucide-react';
 
 // Top-level nav items (non-dropdown)
@@ -30,6 +30,7 @@ const testSubItems = [
   { name: 'Multi Test', path: '/tests/multi-test', icon: Boxes },
   { name: 'Profile Setting', path: '/tests/profile', icon: ListChecks },
   { name: 'Age Category', path: '/tests/age-category', icon: UsersRound },
+  { name: 'Abnormal Indication', path: '/tests/abnormal', icon: AlertCircle },
 ];
 
 const referenceSubItems = [

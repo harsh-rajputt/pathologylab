@@ -15,6 +15,7 @@ const testUnitRoutes = require('./src/routes/testUnitRoutes');
 const testRoutes = require('./src/routes/testRoutes');
 const referenceDoctorRoutes = require('./src/routes/referenceDoctorRoutes');
 const ageCategoryRoutes = require('./src/routes/ageCategoryRoutes');
+const abnormalIndicationRoutes = require('./src/routes/abnormalIndicationRoutes');
 
 // Basic Architecture Route
 app.get('/api/health', (req, res) => {
@@ -29,5 +30,6 @@ app.use('/api/test-units', testUnitRoutes);
 app.use('/api/tests', testRoutes);
 app.use('/api/references', referenceDoctorRoutes);
 app.use('/api/age-categories', ageCategoryRoutes);
+app.use('/api/abnormal-indications', abnormalIndicationRoutes);
 
 module.exports = app;
