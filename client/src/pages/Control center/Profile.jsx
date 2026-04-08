@@ -17,14 +17,51 @@ export default function Profile() {
     });
     const [logoUrl, setLogoUrl] = useState(null);
     const [stampUrl, setStampUrl] = useState(null);
+    const [headerUrl, setHeaderUrl] = useState(null);
+    const [footerUrl, setFooterUrl] = useState(null);
+
+    const headerInputRef = React.useRef(null);
+    const footerInputRef = React.useRef(null);
+    const logoInputRef = React.useRef(null);
 
     const handleFileChange = (e, setUrl) => {
         const file = e.target.files[0];
         if (file) {
-            const url = URL.createObjectURL(file);
-            setUrl(url);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setUrl(reader.result);
+            };
+            reader.readAsDataURL(file);
         }
     };
+
+    const saveLabProfile = () => {
+        const profile = {
+            labName,
+            logoUrl,
+            stampUrl,
+            headerUrl,
+            footerUrl,
+            signatureName: 'Dr. Pathologist', // Default or from state
+            signatureDetail: 'M.B.B.S, M.D.'
+        };
+        localStorage.setItem('labProfile', JSON.stringify(profile));
+        alert('Lab Profile branding saved successfully!');
+    };
+
+    useEffect(() => {
+        const profileRaw = localStorage.getItem('labProfile');
+        if (profileRaw) {
+            try {
+                const p = JSON.parse(profileRaw);
+                setLabName(p.labName || 'Harsh Diagnostic Services');
+                setLogoUrl(p.logoUrl || null);
+                setStampUrl(p.stampUrl || null);
+                setHeaderUrl(p.headerUrl || null);
+                setFooterUrl(p.footerUrl || null);
+            } catch (err) {}
+        }
+    }, []);
 
     const [designData, setDesignData] = useState({
         testHeading: 'Test Name',
@@ -188,15 +225,31 @@ export default function Profile() {
                                         <div className="p-6 space-y-5">
                                             {/* Beautiful Upload Center */}
                                             <div className="flex items-center gap-5 pb-2">
-                                                <div className="w-20 h-20 rounded-2xl bg-indigo-50 border border-indigo-100 border-dashed flex items-center justify-center shrink-0">
-                                                    <UploadCloud className="text-indigo-400" size={28} />
+                                                <div className="w-20 h-20 rounded-2xl bg-indigo-50 border border-indigo-100 border-dashed flex items-center justify-center shrink-0 overflow-hidden relative group">
+                                                    {logoUrl ? (
+                                                        <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                                                    ) : (
+                                                        <UploadCloud className="text-indigo-400" size={28} />
+                                                    )}
+                                                    <input 
+                                                        type="file" 
+                                                        className="absolute inset-0 opacity-0 cursor-pointer" 
+                                                        onChange={(e) => handleFileChange(e, setLogoUrl)}
+                                                    />
                                                 </div>
                                                 <div>
                                                     <p className="text-sm font-semibold text-slate-800 mb-1">Company Logo / Signature</p>
                                                     <p className="text-xs text-slate-500 mb-3">Upload a clean PNG or JPG image</p>
-                                                    <button className="px-4 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-md shadow-sm transition-all">
-                                                        Browse Files
-                                                    </button>
+                                                    <div className="relative inline-block">
+                                                        <button className="px-4 py-1.5 bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-md shadow-sm transition-all pointer-events-none">
+                                                            Browse Files
+                                                        </button>
+                                                        <input 
+                                                            type="file" 
+                                                            className="absolute inset-0 opacity-0 cursor-pointer" 
+                                                            onChange={(e) => handleFileChange(e, setLogoUrl)}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -292,7 +345,10 @@ export default function Profile() {
                                             <Checkbox label="Print Address 2" />
                                             <Checkbox label="Print Both in Receipt" />
                                         </div>
-                                        <button className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm shadow-sm transition-colors flex items-center gap-2">
+                                        <button 
+                                            onClick={saveLabProfile}
+                                            className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-semibold text-sm shadow-sm transition-colors flex items-center gap-2"
+                                        >
                                             Save Setting
                                         </button>
                                     </div>
@@ -445,7 +501,10 @@ export default function Profile() {
 
                                         {/* Action Area */}
                                         <div className="p-6 pt-0 mt-auto flex justify-end">
-                                            <button className="w-full mt-10 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
+                                            <button 
+                                                onClick={saveLabProfile}
+                                                className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg shadow-md transition-colors flex items-center justify-center gap-2"
+                                            >
                                                 <Save size={18} />
                                                 Save Financial Settings
                                             </button>
@@ -470,17 +529,37 @@ export default function Profile() {
                                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                                         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
                                             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">1. Letterhead / Report Header</h3>
+                                            {headerUrl && (
+                                                <button 
+                                                    onClick={() => {
+                                                        setHeaderUrl(null);
+                                                        if (headerInputRef.current) headerInputRef.current.value = '';
+                                                    }} 
+                                                    className="text-[10px] text-red-500 font-bold hover:underline"
+                                                >
+                                                    Remove Header
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="p-6">
-                                            <div className="relative group border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 p-4 transition-all hover:border-sky-300 hover:bg-sky-50/20">
-                                                <div className="flex flex-col items-center justify-center min-h-[140px] text-center">
-                                                    <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                                        <ImagePlus size={24} className="text-slate-400 group-hover:text-sky-500" />
+                                            <div className="relative group border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 p-4 transition-all hover:border-sky-300 hover:bg-sky-50/20 overflow-hidden">
+                                                {headerUrl ? (
+                                                    <img src={headerUrl} alt="Header Preview" className="w-full h-auto max-h-48 object-contain" />
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center min-h-[140px] text-center">
+                                                        <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                                                            <ImagePlus size={24} className="text-slate-400 group-hover:text-sky-500" />
+                                                        </div>
+                                                        <p className="text-sm font-bold text-slate-700">Drop brand header here or click to upload</p>
+                                                        <p className="text-[11px] text-slate-400 mt-1 uppercase tracking-tight">Rec: 2000px x 400px (Max 2MB)</p>
                                                     </div>
-                                                    <p className="text-sm font-bold text-slate-700">Drop brand header here or click to upload</p>
-                                                    <p className="text-[11px] text-slate-400 mt-1 uppercase tracking-tight">Rec: 2000px x 400px (Max 2MB)</p>
-                                                </div>
-                                                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" />
+                                                )}
+                                                <input 
+                                                    ref={headerInputRef}
+                                                    type="file" 
+                                                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                                                    onChange={(e) => handleFileChange(e, setHeaderUrl)}
+                                                />
                                             </div>
                                         </div>
                                     </div>
@@ -510,21 +589,50 @@ export default function Profile() {
 
                                     {/* Footnote Branding Areas */}
                                     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                                        <div className="px-6 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                                            <FileText size={14} className="text-slate-400" />
-                                            <h3 className="text-[10px] font-bold text-slate-800 uppercase tracking-widest">Global Report Footer</h3>
+                                        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-widest">3. Graphic Report Footer</h3>
+                                            {footerUrl && (
+                                                <button 
+                                                    onClick={() => {
+                                                        setFooterUrl(null);
+                                                        if (footerInputRef.current) footerInputRef.current.value = '';
+                                                    }} 
+                                                    className="text-[10px] text-red-500 font-bold hover:underline"
+                                                >
+                                                    Remove Footer Image
+                                                </button>
+                                            )}
                                         </div>
-                                        <div className="p-4">
-                                            <textarea 
-                                                className="w-full min-h-[120px] p-4 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:ring-2 focus:ring-sky-500 transition-all font-mono"
-                                                placeholder="Enter laboratory address, registration details, or custom report disclaimers..."
-                                            />
+                                        <div className="p-6 space-y-4">
+                                            {/* Graphic Footer upload (Matching Header UI) */}
+                                            <div className="relative group border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 p-4 transition-all hover:border-sky-300 hover:bg-sky-50/20 overflow-hidden">
+                                                {footerUrl ? (
+                                                    <img src={footerUrl} alt="Footer Preview" className="w-full h-auto max-h-32 object-contain" />
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center min-h-[100px] text-center">
+                                                        <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                                                            <UploadCloud size={20} className="text-slate-400 group-hover:text-sky-500" />
+                                                        </div>
+                                                        <p className="text-xs font-bold text-slate-700">Drop brand footer here or click to upload</p>
+                                                        <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight">Full width banner for report bottom</p>
+                                                    </div>
+                                                )}
+                                                <input 
+                                                    ref={footerInputRef}
+                                                    type="file" 
+                                                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                                                    onChange={(e) => handleFileChange(e, setFooterUrl)}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
                                     {/* Centered Save Button at bottom */}
                                     <div className="pt-4 flex justify-center">
-                                        <button className="px-12 py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xl shadow-sky-600/20 transition-all flex items-center gap-3 active:scale-95">
+                                        <button 
+                                            onClick={saveLabProfile}
+                                            className="px-12 py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xl shadow-sky-600/20 transition-all flex items-center gap-3 active:scale-95"
+                                        >
                                             <Save size={20} /> Save All Settings
                                         </button>
                                     </div>

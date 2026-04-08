@@ -19,25 +19,79 @@ export default function PrintReport() {
         deptStyle: 'Center',
         printBorder: false
     });
+    const [abnormalList, setAbnormalList] = useState([]);
+    const [profile, setProfile] = useState(null);
+    const [pageSettings, setPageSettings] = useState({
+        letterPad: {
+            topMargin: 100, leftMargin: 25, rightMargin: 15, bottomMargin: 100,
+            patientFormat: 'Format19', overlap: 110,
+            showFooter1: false, showFooter2: false,
+            patientBoxed: true, pageNumber: true,
+            resultEndLine: false, removeTime: true,
+            symbol: true, testBottomLine: true,
+            endOfReport: true,
+            signatures: { left: true, mid: false, right: false, fourth: false }
+        },
+        a4Page: {
+            headerHeight: 134, leftMargin: 10, rightMargin: 10, bottomMargin: 100,
+            patientFormat: 'Format19', overlap: 134,
+            showFooter1: true, showFooter2: false,
+            patientBoxed: true, pageNumber: true,
+            resultEndLine: true, removeTime: false,
+            symbol: true, testBottomLine: true,
+            endOfReport: true,
+            signatures: { left: true, mid: false, right: false, fourth: false }
+        }
+    });
+    const [isLetterPad, setIsLetterPad] = useState(false);
     const printed = useRef(false);
 
     useEffect(() => {
-        // Read design settings
+        // 1. Load Design Settings
         const designRaw = localStorage.getItem('reportDesignSettings');
         if (designRaw) {
             try { setDesign(JSON.parse(designRaw)); } catch {}
         }
 
-        // Read data passed from ResultPrint
+        // 2. Load Profile (Logo, Margins, etc)
+        const profileRaw = localStorage.getItem('labProfile');
+        if (profileRaw) {
+            try { setProfile(JSON.parse(profileRaw)); } catch {}
+        }
+
+        // 3. Load Print Data
         const raw = localStorage.getItem('printData');
         if (raw) {
-            try { setPrintData(JSON.parse(raw)); } catch {}
+            try { 
+                const pRaw = JSON.parse(raw);
+                setPrintData(pRaw); 
+                if (pRaw.letterPad !== undefined) {
+                    setIsLetterPad(pRaw.letterPad);
+                }
+            } catch {}
         }
-        // Fetch all test definitions
-        fetch('http://localhost:5000/api/tests')
-            .then(r => r.json())
-            .then(data => { if (data.success) setAllTests(data.tests); })
-            .catch(console.error);
+
+        // 3.5 Load Page Setup
+        const pageRaw = localStorage.getItem('pageSettings');
+        if (pageRaw) {
+            try { setPageSettings(JSON.parse(pageRaw)); } catch {}
+        }
+
+        // 4. Fetch Master Data
+        const fetchMasters = async () => {
+            try {
+                const [testsRes, abnormalRes] = await Promise.all([
+                    fetch('http://localhost:5000/api/tests').then(r => r.json()),
+                    fetch('http://localhost:5000/api/abnormal-indications').then(r => r.json())
+                ]);
+                
+                if (testsRes.success) setAllTests(testsRes.tests);
+                if (abnormalRes.success) setAbnormalList(abnormalRes.items);
+            } catch (err) {
+                console.error("Master Fetch Error:", err);
+            }
+        };
+        fetchMasters();
     }, []);
 
     // Build flat rows once both printData and allTests are available
@@ -47,7 +101,7 @@ export default function PrintReport() {
         for (const pt of (printData.tests || [])) {
             const def = allTests.find(t => t.testName === pt.name);
             if (def && def.testFormat === 'Multiple' && def.childTests?.length > 0) {
-                built.push({ type: 'group', name: pt.name });
+                built.push({ type: 'group', name: pt.name, department: def.department });
                 for (const childId of def.childTests) {
                     const childDef = allTests.find(t => t._id === childId || t._id === String(childId));
                     if (childDef) {
@@ -75,15 +129,28 @@ export default function PrintReport() {
         }
     }, [rows]);
 
-    const getStatus = (def, testName) => {
-        if (!printData) return 'none';
+    const getAbnormalConfig = (def, testName) => {
+        if (!printData || !def) return null;
         const val = parseFloat(printData.results?.[testName]?.value);
-        if (!def || isNaN(val)) return 'none';
-        const low  = parseFloat(def.normalLower);
-        const high = parseFloat(def.normalHigher);
-        if (!isNaN(low)  && val < low)  return 'low';
-        if (!isNaN(high) && val > high) return 'high';
-        return 'normal';
+        if (isNaN(val)) return null;
+
+        const lowBound  = parseFloat(def.normalLower);
+        const highBound = parseFloat(def.normalHigher);
+
+        let type = 'normal';
+        if (!isNaN(lowBound) && val < lowBound) type = 'low';
+        if (!isNaN(highBound) && val > highBound) type = 'high';
+
+        if (type === 'normal') return null;
+
+        // Find matching indicator from DB
+        const match = abnormalList.find(item => item.isDefault) || abnormalList[0];
+        if (!match) return { symbol: type === 'low' ? 'L' : 'H', color: '#DC2626' };
+        
+        return {
+            symbol: type === 'low' ? match.low : match.high,
+            color: match.color
+        };
     };
 
     if (!printData) {
@@ -94,29 +161,29 @@ export default function PrintReport() {
         );
     }
 
-    const { patient, results = {}, letterPad } = printData;
+    const { patient, results = {} } = printData;
+    const config = isLetterPad ? pageSettings.letterPad : pageSettings.a4Page;
     let paramNo = 0;
 
     return (
-        <>
+        <div className="min-h-screen bg-transparent">
             {/* Print-only styles */}
             <style>{`
                 @media print {
-                    body { margin: 0; }
+                    @page { margin: 0; }
                     .no-print { display: none !important; }
-                    .page { box-shadow: none !important; margin: 0 !important; }
+                    body { margin: 0; padding: 0; background: #fff !important; }
                 }
-                @page { size: A4; margin: 10mm; }
                 body { font-family: '${design.fontFamily}', sans-serif; background: #e5e7eb; }
             `}</style>
 
-            {/* Print Button (hidden on print) */}
+            {/* Simple Print Toolbar (hidden on print) */}
             <div className="no-print flex gap-3 p-3 bg-gray-100 border-b border-gray-300">
                 <button
                     onClick={() => window.print()}
-                    className="px-5 py-2 bg-purple-700 text-white font-bold rounded hover:bg-purple-800"
+                    className="px-5 py-2 bg-purple-700 text-white font-bold rounded hover:bg-purple-800 shadow-sm"
                 >
-                    🖨 Print
+                    🖨 Print Report
                 </button>
                 <button
                     onClick={() => window.close()}
@@ -133,55 +200,89 @@ export default function PrintReport() {
                 margin: '10px auto',
                 background: '#fff',
                 boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
-                padding: '0',
+                paddingTop: isLetterPad ? `${config.topMargin || 100}px` : `${config.headerHeight || 0}px`,
+                paddingLeft: `${config.leftMargin || 0}px`,
+                paddingRight: `${config.rightMargin || 0}px`,
+                paddingBottom: `${config.bottomMargin || 50}px`,
                 fontSize: `${design.fontSize}px`,
                 fontFamily: `'${design.fontFamily}', sans-serif`,
                 display: 'flex',
                 flexDirection: 'column',
+                position: 'relative',
                 border: design.printBorder ? '1px solid #000' : 'none'
             }}>
 
-                {/* ── HEADER MARGIN FOR LETTERHEAD ── */}
-                <div style={{ height: '40px' }}></div>
+                {/* ── HEADER / LETTERHEAD ── */}
+                {!isLetterPad && (
+                    <>
+                        {profile?.headerUrl ? (
+                            <div style={{ width: '100%', marginBottom: '15px' }}>
+                                <img 
+                                    src={profile.headerUrl} 
+                                    alt="Letterhead" 
+                                    style={{ 
+                                        width: '100%', 
+                                        display: 'block',
+                                        objectFit: 'contain'
+                                    }} 
+                                />
+                            </div>
+                        ) : (
+                            <div style={{ 
+                                padding: '30px 40px 15px', 
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center',
+                                borderBottom: '2.5px solid #000',
+                                marginBottom: '15px',
+                                margin: '0 40px'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                    {profile?.logoUrl && (
+                                        <img src={profile.logoUrl} alt="Logo" style={{ height: '60px', width: 'auto', objectFit: 'contain' }} />
+                                    )}
+                                    <div>
+                                        <h1 style={{ fontSize: '28px', fontWeight: '900', color: '#000', margin: 0, textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                            {profile?.labName || 'LABORATORY REPORT'}
+                                        </h1>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
 
-                {/* ── PATIENT INFO ── */}
-                <div style={{ padding: '0 20px 10px' }}>
+                {/* ── PATIENT INFO TRADITIONAL ── */}
+                <div style={{ padding: '0 40px 15px' }}>
                     <div style={{ 
-                        border: '1px solid #000', 
-                        padding: '8px 12px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        fontSize: '11px'
+                        border: '1.5px solid #000', 
+                        padding: '10px 15px',
+                        display: 'grid',
+                        gridTemplateColumns: '1.2fr 0.8fr',
+                        gap: '0 40px',
+                        fontSize: '12px',
+                        lineHeight: '1.3'
                     }}>
                         {/* LEFT COLUMN */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '110px 10px 1fr', gap: '3px 0', lineHeight: '1.2' }}>
-                            <div>PATIENT ID</div><div>:</div><div>{patient.labId || patient.id || '—'}</div>
-                            <div>PATIENT NAME</div><div>:</div><div>{patient.prefix} {patient.fullName}</div>
-                            <div>SEX / AGE</div><div>:</div><div>{patient.gender} / {patient.age} {patient.ageUnit}</div>
-                            <div>MOBILE NO.</div><div>:</div><div>{patient.mobileNo || ''}</div>
-                            <div>REF. DOCTOR</div><div>:</div><div>{patient.referBy || 'Self'}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '120px 5px 1fr', gap: '3px 0' }}>
+                            <div style={{ fontWeight: '500' }}>PATIENT ID</div><div>:</div><div>{patient.labId || patient.id || '—'}</div>
+                            <div style={{ fontWeight: '500' }}>PATIENT NAME</div><div>:</div><div>{patient.prefix} {patient.fullName}</div>
+                            <div style={{ fontWeight: '500' }}>SEX / AGE</div><div>:</div><div>{patient.gender} / {patient.age} {patient.ageUnit}</div>
+                            <div style={{ fontWeight: '500' }}>MOBILE NO.</div><div>:</div><div>{patient.mobileNo || '—'}</div>
+                            <div style={{ fontWeight: '500' }}>REF. DOCTOR</div><div>:</div><div>{patient.referBy || 'Self'}</div>
                         </div>
 
                         {/* RIGHT COLUMN */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '110px 10px 100px', gap: '3px 0', lineHeight: '1.2' }}>
-                            <div>COLLECTED ON</div><div>:</div><div>{patient.reportingDate || '—'}</div>
-                            <div>RECEIVED ON</div><div>:</div><div>{patient.reportingDate || '—'}</div>
-                            <div>REPORTING ON</div><div>:</div><div>{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</div>
-                            <div>BARCODE</div><div>:</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '120px 5px 1fr', gap: '3px 0' }}>
+                            <div style={{ fontWeight: '500' }}>COLLECTED ON</div><div>:</div><div>{patient.reportingDate || '—'}</div>
+                            <div style={{ fontWeight: '500' }}>RECEIVED ON</div><div>:</div><div>{patient.reportingDate || '—'}</div>
+                            <div style={{ fontWeight: '500' }}>REPORTING ON</div><div>:</div><div>{new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}</div>
+                            <div style={{ fontWeight: '500' }}>BARCODE</div><div>:</div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', marginTop: '2px' }}>
-                                {/* Fake barcode */}
-                                <div style={{ display: 'flex', height: '14px', width: '100%' }}>
-                                    <div style={{ flex: 1, background: '#000' }}></div>
-                                    <div style={{ flex: 0.5, background: '#fff' }}></div>
-                                    <div style={{ flex: 2, background: '#000' }}></div>
-                                    <div style={{ flex: 1, background: '#fff' }}></div>
-                                    <div style={{ flex: 0.5, background: '#000' }}></div>
-                                    <div style={{ flex: 2, background: '#fff' }}></div>
-                                    <div style={{ flex: 1.5, background: '#000' }}></div>
-                                    <div style={{ flex: 1, background: '#fff' }}></div>
-                                    <div style={{ flex: 3, background: '#000' }}></div>
-                                    <div style={{ flex: 1, background: '#fff' }}></div>
-                                    <div style={{ flex: 1.5, background: '#000' }}></div>
+                                <div style={{ display: 'flex', height: '18px', width: '100%', background: '#fff' }}>
+                                    {[2, 1, 4, 1, 3, 2, 5, 2, 4, 1, 3].map((w, idx) => (
+                                        <div key={idx} style={{ flex: w, background: idx % 2 === 0 ? '#000' : '#fff' }}></div>
+                                    ))}
                                 </div>
                             </div>
                         </div>
@@ -189,14 +290,14 @@ export default function PrintReport() {
                 </div>
 
                 {/* ── RESULTS TABLE ── */}
-                <div style={{ padding: '0 20px', flex: 1 }}>
+                <div style={{ padding: '0 40px', flex: 1 }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: `${design.fontSize}px` }}>
                         <thead>
-                            <tr style={{ borderTop: '2px solid #000', borderBottom: '1px solid #000' }}>
-                                <th style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 'bold', width: '40%' }}>{design.testHeading}</th>
-                                <th style={{ padding: '6px 8px', textAlign: design.findingAlign.toLowerCase(), fontWeight: 'bold', width: '20%' }}>{design.findingHeader}</th>
-                                <th style={{ padding: '6px 8px', textAlign: design.unitAlign.toLowerCase(), fontWeight: 'bold', width: '20%' }}>{design.unitHeader}</th>
-                                <th style={{ padding: '6px 8px', textAlign: design.rangeAlign.toLowerCase(), fontWeight: 'bold', width: '20%' }}>{design.rangeHeader}</th>
+                            <tr style={{ borderTop: '2.5px solid #000', borderBottom: '1.5px solid #000' }}>
+                                <th style={{ padding: '8px 5px', textAlign: 'left', fontWeight: 'bold', width: '40%' }}>{design.testHeading}</th>
+                                <th style={{ padding: '8px 5px', textAlign: 'center', fontWeight: 'bold', width: '20%' }}>{design.findingHeader}</th>
+                                <th style={{ padding: '8px 5px', textAlign: 'left', fontWeight: 'bold', width: '20%' }}>{design.unitHeader}</th>
+                                <th style={{ padding: '8px 5px', textAlign: 'left', fontWeight: 'bold', width: '20%' }}>{design.rangeHeader}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -204,16 +305,20 @@ export default function PrintReport() {
                                 // GROUP header row (Department/Wing)
                                 if (row.type === 'group') {
                                     return (
-                                        <tr key={`g-${i}`}>
-                                            <td colSpan="4" style={{ 
-                                                padding: `${design.gapBetween / 2}px 8px 6px`, 
-                                                textAlign: design.deptStyle.toLowerCase().includes('center') ? 'center' : 'left', 
-                                                fontWeight: '900', 
-                                                borderBottom: design.deptStyle.toLowerCase().includes('underline') ? '1px solid #000' : 'none' 
-                                            }}>
-                                                <div style={{ fontSize: `${parseInt(design.fontSize) + 2}px` }}>[ {row.name.toUpperCase()} * ]</div>
-                                            </td>
-                                        </tr>
+                                        <React.Fragment key={`g-${i}`}>
+                                            <tr>
+                                                <td colSpan="4" style={{ padding: '15px 5px 2px', textAlign: 'center', fontWeight: 'bold', border: 'none' }}>
+                                                    <div style={{ fontSize: '14px', textTransform: 'uppercase' }}>[ {row.name} * ]</div>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colSpan="4" style={{ padding: '0 5px 12px', textAlign: 'center', fontWeight: 'bold' }}>
+                                                    <div style={{ fontSize: '13px', textTransform: 'uppercase', textDecoration: 'underline' }}>
+                                                        {row.department || 'LABORATORY'}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </React.Fragment>
                                     );
                                 }
 
@@ -221,7 +326,7 @@ export default function PrintReport() {
                                 if (row.type === 'subheading') {
                                     return (
                                         <tr key={`s-${i}`}>
-                                            <td colSpan="4" style={{ padding: '6px 8px 2px', fontWeight: '900', textTransform: 'uppercase' }}>
+                                            <td colSpan="4" style={{ padding: '10px 5px 2px', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase' }}>
                                                 {row.name}
                                             </td>
                                         </tr>
@@ -230,10 +335,10 @@ export default function PrintReport() {
 
                                 // PARAM row (Individual test values)
                                 paramNo++;
-                                const def      = row.def;
-                                const status   = getStatus(def, row.name);
-                                const val      = results[row.name]?.value ?? '';
-                                const rangeTxt = def
+                                const def       = row.def;
+                                const abnormal  = getAbnormalConfig(def, row.name);
+                                const val       = results[row.name]?.value ?? '';
+                                const rangeTxt  = def
                                     ? [def.normalLower, def.normalHigher].filter(Boolean).join(' - ')
                                     : '';
                                 
@@ -253,19 +358,36 @@ export default function PrintReport() {
                                     <React.Fragment key={`frag-${i}`}>
                                         <tr style={{ borderBottom: design.multiUnderline && !row.isChild ? '1px solid #eee' : 'none' }}>
                                             <td style={{
-                                                padding: '4px 8px',
-                                                fontWeight: isBold ? '900' : '500',
+                                                padding: '5px 8px',
+                                                fontWeight: isBold ? '800' : '500',
                                                 textTransform: 'uppercase',
-                                                color: '#000'
+                                                color: '#1e293b'
                                             }}>
                                                 {row.name}
                                             </td>
-                                            <td style={{ padding: '4px 8px', textAlign: design.findingAlign.toLowerCase() }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: design.findingAlign.toLowerCase() === 'center' ? 'center' : 'flex-start' }}>
-                                                    <span style={{ width: '16px', fontWeight: '900', display: 'inline-block' }}>
-                                                        {status === 'high' ? 'H' : status === 'low' ? 'L' : ''}
-                                                    </span>
-                                                    <span style={{ fontWeight: (status !== 'normal' && val !== '' && design.highlightBold) || isBold ? '900' : '500' }}>
+                                            <td style={{ padding: '5px 8px', textAlign: design.findingAlign.toLowerCase() }}>
+                                                <div style={{ 
+                                                    display: 'inline-flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '8px',
+                                                    position: 'relative',
+                                                    paddingLeft: abnormal ? '15px' : '0'
+                                                }}>
+                                                    {abnormal && (
+                                                        <span style={{ 
+                                                            position: 'absolute', 
+                                                            left: '-2px',
+                                                            fontWeight: '900', 
+                                                            color: abnormal.color,
+                                                            fontSize: '11px'
+                                                        }}>
+                                                            {abnormal.symbol}
+                                                        </span>
+                                                    )}
+                                                    <span style={{ 
+                                                        fontWeight: (abnormal || isBold) ? '800' : '500',
+                                                        color: abnormal ? abnormal.color : '#1e293b'
+                                                    }}>
                                                         {val !== '' ? val : '-'}
                                                     </span>
                                                 </div>
@@ -308,54 +430,53 @@ export default function PrintReport() {
                     </table>
                 </div>
 
-                {/* ── FOOTER ── */}
-                <div style={{
-                    marginTop: '20px',
-                    padding: '10px 20px',
-                    textAlign: 'center',
-                    fontWeight: '900',
-                    fontSize: '11px',
-                    fontFamily: 'Arial, sans-serif'
-                }}>
-                    <div style={{ borderTop: '2px solid #000', marginBottom: '16px' }}></div>
-                    ---End Of The Report---
-                </div>
+                {/* ── FOOTER / DISCLAIMER ── */}
+                {!isLetterPad && (config.showFooter1 || config.endOfReport) && (
+                    <div style={{ 
+                        marginTop: '30px', 
+                        pageBreakInside: 'avoid',
+                        breakInside: 'avoid'
+                    }}>
+                        {profile?.footerUrl && config.showFooter1 ? (
+                            <div style={{ width: '100%' }}>
+                                <img 
+                                    src={profile.footerUrl} 
+                                    alt="Footer Banner" 
+                                    style={{ width: '100%', display: 'block', objectFit: 'contain' }} 
+                                />
+                            </div>
+                        ) : (
+                            config.endOfReport && (
+                                <div style={{
+                                    padding: '10px 40px 30px',
+                                    textAlign: 'center',
+                                    fontWeight: '900',
+                                    fontSize: '11px',
+                                    color: '#000'
+                                }}>
+                                    <div style={{ borderTop: '2px solid #000', marginBottom: '10px', margin: '0 40px' }}></div>
+                                    --- End Of The Report ---
+                                </div>
+                            )
+                        )}
+                    </div>
+                )}
 
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-end',
-                    padding: '10px 40px 30px',
-                    fontSize: '10px',
-                    fontWeight: '900',
-                    fontFamily: 'Arial, sans-serif'
-                }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ width: '120px', height: '40px', borderBottom: '1px solid #ccc', margin: '0 auto 5px' }}>
-                            {/* Signature Mock */}
-                            <svg viewBox="0 0 100 40" style={{ width: '100%', height: '100%', opacity: 0.8 }}>
-                                <path d="M10,30 Q25,10 40,30 T70,5" fill="none" stroke="#000" strokeWidth="1.5" />
-                                <path d="M40,20 L60,40" fill="none" stroke="#000" strokeWidth="1" />
-                            </svg>
-                        </div>
-                        <div>DR. ARUN KUMAR GUPTA</div>
-                        <div>MD. (PATH.)</div>
+                {/* Page Numbering */}
+                {config.pageNumber && (
+                    <div style={{ 
+                        position: 'absolute', 
+                        bottom: '15px', 
+                        right: '40px', 
+                        fontSize: '10px', 
+                        color: '#64748b', 
+                        fontWeight: '600' 
+                    }}>
+                        Page 1 of 1
                     </div>
-                    
-                    <div style={{ width: '70px', height: '70px' }}>
-                        {/* Mock QR Code */}
-                        <svg viewBox="0 0 10 10" width="100%" height="100%">
-                            <rect width="10" height="10" fill="#000" />
-                            <rect width="8" height="8" fill="#fff" x="1" y="1" />
-                            <rect width="3" height="3" fill="#000" x="2" y="2" />
-                            <rect width="3" height="3" fill="#000" x="5" y="5" />
-                            <rect width="2" height="2" fill="#000" x="6" y="2" />
-                            <rect width="2" height="2" fill="#000" x="2" y="6" />
-                        </svg>
-                    </div>
-                </div>
+                )}
 
             </div>
-        </>
+        </div>
     );
 }

@@ -7,9 +7,9 @@ export default function ResultPrint() {
     const navigate = useNavigate();
     const { patient, results } = location.state || {};
 
-    const [letterPad, setLetterPad]        = useState(true);
+    const [letterPad, setLetterPad] = useState(true);
     const [selectedTests, setSelectedTests] = useState([]);
-    const [allTests, setAllTests]           = useState([]);
+    const [allTests, setAllTests] = useState([]);
 
     useEffect(() => {
         fetch('http://localhost:5000/api/tests')
@@ -91,23 +91,38 @@ export default function ResultPrint() {
                 <span>{formatDateTime(patient.reportingDate, patient.reportingTime)}</span>
             </div>
 
-            {/* Action Toolbar */}
-            <div className="bg-white border-b border-gray-300 px-4 py-2.5 flex items-center gap-2 flex-wrap">
+            {/* Action Toolbar (Premium Style) */}
+            <div className="bg-white border-b border-gray-300 px-4 py-3 flex items-center gap-2 flex-wrap">
 
-                {/* Letter Pad Toggle */}
-                <label className="flex items-center gap-1.5 bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded cursor-pointer hover:bg-green-700 select-none">
+                <div
+                    onClick={() => setLetterPad(!letterPad)}
+                    className={`flex items-center gap-3 px-4 py-2 rounded cursor-pointer transition-all ${letterPad ? 'bg-green-700 text-white shadow-inner' : 'bg-green-600 hover:bg-green-700 text-white shadow-sm'}`}
+                >
                     <input
                         type="checkbox"
                         checked={letterPad}
-                        onChange={e => setLetterPad(e.target.checked)}
-                        className="accent-white w-3.5 h-3.5"
+                        readOnly
+                        className="w-4 h-4 rounded accent-green-500 cursor-pointer"
                     />
-                    Print On Letter Pad
-                </label>
+                    <span className="text-xs font-bold tracking-wide uppercase">Letter Pad</span>
+                </div>
+
+                <div
+                    onClick={() => setLetterPad(false)}
+                    className={`flex items-center gap-3 px-4 py-2 rounded cursor-pointer transition-all border ${!letterPad ? 'bg-sky-600 text-white border-sky-600 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                >
+                    <input
+                        type="checkbox"
+                        checked={!letterPad}
+                        readOnly
+                        className="w-4 h-4 rounded accent-sky-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-bold tracking-wide uppercase">Plain Paper</span>
+                </div>
 
                 <button
                     onClick={() => handlePrint(tests)}
-                    className="px-4 py-1.5 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 transition-colors"
+                    className="px-6 py-2.5 bg-[#2d3748] hover:bg-slate-800 text-white text-xs font-bold rounded shadow-sm transition-all tracking-wide uppercase"
                 >
                     Print All Test
                 </button>
@@ -115,38 +130,38 @@ export default function ResultPrint() {
                 <button
                     onClick={() => handlePrint(tests.filter(t => selectedTests.includes(t.name)))}
                     disabled={selectedTests.length === 0}
-                    className="px-4 py-1.5 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-2.5 bg-[#94a3b8] hover:bg-slate-400 text-white text-xs font-bold rounded uppercase disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     Print Selected Test
                 </button>
 
-                {/* WhatsApp buttons */}
+                <div className="h-8 w-px bg-gray-200 mx-1"></div>
+
                 <button
                     onClick={handlePatientWhatsapp}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white text-xs font-bold rounded hover:bg-green-600 transition-colors"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#22c55e] hover:bg-[#16a34a] text-white text-xs font-bold rounded shadow-sm transition-all uppercase"
                 >
-                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.122 1.535 5.854L.057 23.527a.5.5 0 00.611.611l5.737-1.501A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.812 9.812 0 01-5.045-1.394l-.361-.214-3.737.979.997-3.647-.235-.374A9.818 9.818 0 012.182 12C2.182 6.58 6.58 2.182 12 2.182S21.818 6.58 21.818 12 17.42 21.818 12 21.818z"/></svg>
-                    Patient Whatsapp
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+                    Patient
                 </button>
+
                 <button
                     onClick={handleDrWhatsapp}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-700 text-white text-xs font-bold rounded hover:bg-green-800 transition-colors"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold rounded shadow-sm transition-all uppercase"
                 >
-                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.122 1.535 5.854L.057 23.527a.5.5 0 00.611.611l5.737-1.501A11.952 11.952 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.812 9.812 0 01-5.045-1.394l-.361-.214-3.737.979.997-3.647-.235-.374A9.818 9.818 0 012.182 12C2.182 6.58 6.58 2.182 12 2.182S21.818 6.58 21.818 12 17.42 21.818 12 21.818z"/></svg>
-                    Dr. Whatsapp
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+                    Dr. WhatsApp
                 </button>
 
-                {/* Spacer */}
                 <div className="flex-1" />
 
-                {/* Reg Number Search */}
                 <div className="flex items-center gap-1">
                     <input
                         type="text"
                         placeholder="Reg Number"
-                        className="border border-red-500 px-2 py-1.5 text-xs rounded outline-none w-32 focus:ring-1 focus:ring-red-400"
+                        className="border border-red-500 px-3 py-2 text-xs rounded outline-none w-32 focus:ring-1 focus:ring-red-400 font-bold"
                     />
-                    <button className="px-3 py-1.5 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800">
+                    <button className="px-4 py-2 bg-gray-700 text-white text-xs font-bold rounded hover:bg-gray-800 transition-colors">
                         Find
                     </button>
                 </div>
@@ -178,12 +193,13 @@ export default function ResultPrint() {
                                             {test.name} <span className="text-red-400">*</span>
                                         </td>
                                         <td className="px-3 py-2.5 text-xs font-semibold"
-                                            style={{ color:
-                                                (() => {
-                                                    const def = allTests.find(t => t.testName === test.name);
-                                                    const fmt = def?.testFormat || 'Single';
-                                                    return fmt === 'Multiple' ? '#2563eb' : fmt === 'Heading' ? '#7c3aed' : '#16a34a';
-                                                })()
+                                            style={{
+                                                color:
+                                                    (() => {
+                                                        const def = allTests.find(t => t.testName === test.name);
+                                                        const fmt = def?.testFormat || 'Single';
+                                                        return fmt === 'Multiple' ? '#2563eb' : fmt === 'Heading' ? '#7c3aed' : '#16a34a';
+                                                    })()
                                             }}
                                         >
                                             {allTests.find(t => t.testName === test.name)?.testFormat || 'Single'}
