@@ -18,7 +18,7 @@ export default function Dashboard() {
                 const res = await fetch('http://localhost:5000/api/patients');
                 const data = await res.json();
                 if (data.success) {
-                    const patients = data.patients;
+                    const patients = data.data.patients;
 
                     const now = new Date();
                     const currentMonth = now.getMonth();

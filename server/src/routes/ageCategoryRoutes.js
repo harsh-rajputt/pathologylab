@@ -1,15 +1,14 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { 
-    createAgeCategory, 
+import { createAgeCategory, 
     getAgeCategories, 
     updateAgeCategory, 
     deleteAgeCategory 
-} = require('../controllers/ageCategoryController');
+ } from '../controllers/ageCategoryController.js';
 
 router.post('/', createAgeCategory);
 router.get('/', getAgeCategories);
 router.put('/:id', updateAgeCategory);
 router.delete('/:id', deleteAgeCategory);
 
-module.exports = router;
+export default router;

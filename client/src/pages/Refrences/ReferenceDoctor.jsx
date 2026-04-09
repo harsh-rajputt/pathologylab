@@ -47,7 +47,7 @@ export default function ReferenceDoctor() {
             const res = await fetch('http://localhost:5000/api/references');
             const data = await res.json();
             if (data.success) {
-                setDoctors(data.references);
+                setDoctors(data.data.references);
             }
         } catch (error) {
             console.error("Failed to load references", error);
@@ -266,7 +266,7 @@ export default function ReferenceDoctor() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-600">
-                            {doctors.map((doc, idx) => (
+                            {doctors.map((doc) => (
                                 <tr key={doc._id} className="hover:bg-slate-50 transition-colors">
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-2">

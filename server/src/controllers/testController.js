@@ -1,49 +1,46 @@
-const Test = require('../models/Test');
+import Test from '../models/Test.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 
-exports.createTest = async (req, res) => {
+export const createTest = asyncHandler(async (req, res) => {
     try {
         const test = new Test(req.body);
         await test.save();
-        res.status(201).json({ success: true, test });
+        return res.status(201).json(new ApiResponse(201, { test }, "Test configuration created"));
     } catch (error) {
-        if(error.code === 11000) return res.status(400).json({ success: false, error: "Test name already exists" });
-        console.error("Create Test Error:", error);
-        res.status(400).json({ success: false, error: "Failed to create test configuration" });
+        if (error.code === 11000) {
+            throw new ApiError(400, "Test name already exists");
+        }
+        throw new ApiError(400, "Failed to create test configuration", [error.message]);
     }
-};
+});
 
-exports.getTests = async (req, res) => {
-    try {
-        const tests = await Test.find().sort({ createdAt: -1 });
-        res.status(200).json({ success: true, tests });
-    } catch (error) {
-        res.status(500).json({ success: false, error: "Failed to fetch tests" });
-    }
-};
-exports.updateTest = async (req, res) => {
-    try {
-        const item = await Test.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.status(200).json({ success: true, test: item });
-    } catch (error) {
-        res.status(400).json({ success: false, error: "Failed to update test" });
-    }
-};
+export const getTests = asyncHandler(async (req, res) => {
+    const tests = await Test.find().sort({ createdAt: -1 });
+    return res.status(200).json(new ApiResponse(200, { tests }, "Tests fetched successfully"));
+});
 
-exports.getTestById = async (req, res) => {
-    try {
-        const test = await Test.findById(req.params.id);
-        if (!test) return res.status(404).json({ success: false, error: "Test not found" });
-        res.status(200).json({ success: true, test });
-    } catch (error) {
-        res.status(500).json({ success: false, error: "Server error fetching test" });
+export const updateTest = asyncHandler(async (req, res) => {
+    const item = await Test.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!item) {
+        throw new ApiError(404, "Test not found");
     }
-};
+    return res.status(200).json(new ApiResponse(200, { test: item }, "Test updated successfully"));
+});
 
-exports.deleteTest = async (req, res) => {
-    try {
-        await Test.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true });
-    } catch (error) {
-        res.status(400).json({ success: false, error: "Failed to delete test" });
+export const getTestById = asyncHandler(async (req, res) => {
+    const test = await Test.findById(req.params.id);
+    if (!test) {
+        throw new ApiError(404, "Test not found");
     }
-};
+    return res.status(200).json(new ApiResponse(200, { test }, "Test fetched successfully"));
+});
+
+export const deleteTest = asyncHandler(async (req, res) => {
+    const test = await Test.findByIdAndDelete(req.params.id);
+    if (!test) {
+        throw new ApiError(404, "Test not found");
+    }
+    return res.status(200).json(new ApiResponse(200, {}, "Test deleted successfully"));
+});

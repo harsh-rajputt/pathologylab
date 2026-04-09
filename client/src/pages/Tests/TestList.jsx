@@ -20,17 +20,13 @@ export default function TestList() {
         wing: ''
     });
 
-    useEffect(() => {
-        fetchTests();
-    }, []);
-
     const fetchTests = async () => {
         setIsLoading(true);
         try {
             const res = await fetch('http://localhost:5000/api/tests');
             const data = await res.json();
             if (data.success) {
-                setTests(data.tests);
+                setTests(data.data.tests);
             }
         } catch (error) {
             console.error("Failed to fetch tests:", error);
@@ -39,6 +35,11 @@ export default function TestList() {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchTests();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleDelete = async (id) => {
         if (!window.confirm('Are you absolutely sure you want to delete this test permanently?')) return;
@@ -52,7 +53,7 @@ export default function TestList() {
             } else {
                 showNotification(data.error || "Failed to delete", "error");
             }
-        } catch (error) {
+        } catch (_err) {
             showNotification("Server error during deletion", "error");
         }
     };

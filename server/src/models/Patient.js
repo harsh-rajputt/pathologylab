@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const testSchema = new mongoose.Schema({
     name: String,
@@ -37,4 +37,6 @@ const patientSchema = new mongoose.Schema({
     results: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, { timestamps: true });
 
-module.exports = mongoose.models.Patient || mongoose.model('Patient', patientSchema);
+
+// We check if the model exists before compiling it to prevent overwrite errors during hot-reloads
+export default mongoose.models.Patient || mongoose.model('Patient', testSchema);

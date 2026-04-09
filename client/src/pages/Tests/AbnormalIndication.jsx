@@ -18,7 +18,7 @@ const AbnormalIndication = () => {
             const res = await fetch('http://localhost:5000/api/abnormal-indications');
             const data = await res.json();
             if (data.success) {
-                setIndications(data.items);
+                setIndications(data.data.items);
             }
         } catch (err) {
             console.error("Fetch Error:", err);
@@ -90,7 +90,6 @@ const AbnormalIndication = () => {
         }
     };
 
-    const colors = ['Black', 'Brown', 'Red', 'Blue', 'Green', 'Orange', 'Purple'];
 
     return (
         <div className="p-6 md:p-8 min-h-screen bg-slate-50/50 font-sans">

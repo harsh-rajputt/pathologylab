@@ -10,7 +10,7 @@ import { InputField, SelectField, Checkbox } from '../../components/UI/FormContr
 export default function TestEntry() {
     const location = useLocation();
     const navigate = useNavigate();
-    const [isEditMode, setIsEditMode] = useState(false);
+    const isEditMode = !!(location.state?.test);
 
     const [formData, setFormData] = useState({
         testName: '', wing: 'PATHOLOGY', department: '', unit: '', testFormat: 'Single',
@@ -31,8 +31,8 @@ export default function TestEntry() {
             try {
                 const res = await fetch(`http://localhost:5000/api/tests/${id}`);
                 const data = await res.json();
-                if (data.success && data.test) {
-                    const t = data.test;
+                if (data.success && data.data.test) {
+                    const t = data.data.test;
                     setFormData(prev => ({
                         ...prev,
                         ...t,
@@ -64,7 +64,6 @@ export default function TestEntry() {
         };
 
         if (location.state && location.state.test) {
-            setIsEditMode(true);
             const initialTest = location.state.test;
             const testId = initialTest._id || initialTest.id;
             
@@ -130,6 +129,7 @@ export default function TestEntry() {
             }
         };
         fetchMetadata();
+         
     }, []);
 
     const handleAgeGroupChange = (id, field, value) => {

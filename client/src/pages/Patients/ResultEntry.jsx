@@ -29,7 +29,7 @@ export default function ResultEntry() {
         if (!patient) return;
         fetch('http://localhost:5000/api/tests')
             .then(r => r.json())
-            .then(data => { if (data.success) setAllTests(data.tests); })
+            .then(data => { if (data.success) setAllTests(data.data.tests); })
             .catch(err => console.error(err));
         if (patient.results) setResults(patient.results);
     }, [patient]);

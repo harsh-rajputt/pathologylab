@@ -1,9 +1,9 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { createWing, getWings, deleteWing } = require('../controllers/testWingController');
+import { createWing, getWings, deleteWing  } from '../controllers/testWingController.js';
 
 router.post('/', createWing);
 router.get('/', getWings);
 router.delete('/:id', deleteWing);
 
-module.exports = router;
+export default router;

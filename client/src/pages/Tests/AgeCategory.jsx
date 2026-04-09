@@ -8,22 +8,23 @@ export default function AgeCategory() {
     
     const [categories, setCategories] = useState([]);
     
-    // Fetch categories on component mount
-    React.useEffect(() => {
-        fetchAgeCategories();
-    }, []);
-
     const fetchAgeCategories = async () => {
         try {
             const res = await fetch('http://localhost:5000/api/age-categories');
             const data = await res.json();
             if (data.success) {
-                setCategories(data.categories);
+                setCategories(data.data.categories);
             }
         } catch (error) {
             console.error('Failed to fetch Age Categories', error);
         }
     };
+
+    // Fetch categories on component mount
+    React.useEffect(() => {
+        fetchAgeCategories();
+         
+    }, []);
 
     const [formData, setFormData] = useState({
         _id: null,

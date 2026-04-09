@@ -11,16 +11,11 @@ export default function TestDepartment() {
     const [searchQuery, setSearchQuery] = useState('');
     const [wingsList, setWingsList] = useState(["Select Wing"]);
 
-    useEffect(() => {
-        fetchDepartments();
-        fetchWings();
-    }, []);
-
     const fetchDepartments = async () => {
         try {
             const res = await fetch('http://localhost:5000/api/departments');
             const data = await res.json();
-            if (data.success) setDepartments(data.departments);
+            if (data.success) setDepartments(data.data.departments);
         } catch (error) {
             console.error("Failed to fetch departments", error);
         }
@@ -31,13 +26,19 @@ export default function TestDepartment() {
             const res = await fetch('http://localhost:5000/api/wings');
             const data = await res.json();
             if (data.success) {
-                const dynamicWings = data.wings.map(w => w.name);
+                const dynamicWings = data.data.wings.map(w => w.name);
                 setWingsList(["Select Wing", ...dynamicWings]);
             }
         } catch (error) {
             console.error("Failed to fetch wings", error);
         }
     };
+
+    useEffect(() => {
+        fetchDepartments();
+        fetchWings();
+         
+    }, []);
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -62,7 +63,7 @@ export default function TestDepartment() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    setDepartments([data.department, ...departments]);
+                    setDepartments([data.data.department, ...departments]);
                 } else {
                     alert(data.error);
                 }

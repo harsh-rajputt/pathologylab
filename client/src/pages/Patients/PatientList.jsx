@@ -14,7 +14,6 @@ export default function PatientList() {
         fromDate: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0],
         uptoDate: new Date().toISOString().split('T')[0],
         searchType: '',
-        searchType: '',
         user: ''
     });
 
@@ -39,7 +38,7 @@ export default function PatientList() {
             const res = await fetch(url.toString());
             const data = await res.json();
             if (data.success) {
-                setPatients(data.patients);
+                setPatients(data.data.patients);
             }
         } catch (error) {
             console.error("Failed to load patients:", error);
@@ -48,6 +47,7 @@ export default function PatientList() {
 
     useEffect(() => {
         fetchPatients();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleFilterChange = (e) => {
@@ -550,7 +550,7 @@ export default function PatientList() {
                                             const data = await res.json();
                                             if (data.success) {
                                                 // Sync the local Grid state with final server data
-                                                setPatients(patients.map(p => (p._id === targetDuesPatient._id || p.id === targetDuesPatient.id) ? data.patient : p));
+                                                setPatients(patients.map(p => (p._id === targetDuesPatient._id || p.id === targetDuesPatient.id) ? data.data.patient : p));
                                                 setTargetDuesPatient(null);
                                             } else {
                                                 window.alert('Failed to clear dues from server.');

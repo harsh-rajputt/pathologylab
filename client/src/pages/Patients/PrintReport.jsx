@@ -50,13 +50,13 @@ export default function PrintReport() {
         // 1. Load Design Settings
         const designRaw = localStorage.getItem('reportDesignSettings');
         if (designRaw) {
-            try { setDesign(JSON.parse(designRaw)); } catch {}
+            try { setDesign(JSON.parse(designRaw)); } catch (_err) { /* use defaults */ }
         }
 
         // 2. Load Profile (Logo, Margins, etc)
         const profileRaw = localStorage.getItem('labProfile');
         if (profileRaw) {
-            try { setProfile(JSON.parse(profileRaw)); } catch {}
+            try { setProfile(JSON.parse(profileRaw)); } catch (_err) { /* use defaults */ }
         }
 
         // 3. Load Print Data
@@ -68,13 +68,13 @@ export default function PrintReport() {
                 if (pRaw.letterPad !== undefined) {
                     setIsLetterPad(pRaw.letterPad);
                 }
-            } catch {}
+            } catch (_err) { /* use defaults */ }
         }
 
         // 3.5 Load Page Setup
         const pageRaw = localStorage.getItem('pageSettings');
         if (pageRaw) {
-            try { setPageSettings(JSON.parse(pageRaw)); } catch {}
+            try { setPageSettings(JSON.parse(pageRaw)); } catch (_err) { /* use defaults */ }
         }
 
         // 4. Fetch Master Data
@@ -85,8 +85,8 @@ export default function PrintReport() {
                     fetch('http://localhost:5000/api/abnormal-indications').then(r => r.json())
                 ]);
                 
-                if (testsRes.success) setAllTests(testsRes.tests);
-                if (abnormalRes.success) setAbnormalList(abnormalRes.items);
+                if (testsRes.success) setAllTests(testsRes.data.tests);
+                if (abnormalRes.success) setAbnormalList(abnormalRes.data.items);
             } catch (err) {
                 console.error("Master Fetch Error:", err);
             }
@@ -163,7 +163,6 @@ export default function PrintReport() {
 
     const { patient, results = {} } = printData;
     const config = isLetterPad ? pageSettings.letterPad : pageSettings.a4Page;
-    let paramNo = 0;
 
     return (
         <div className="min-h-screen bg-transparent">
@@ -334,7 +333,6 @@ export default function PrintReport() {
                                 }
 
                                 // PARAM row (Individual test values)
-                                paramNo++;
                                 const def       = row.def;
                                 const abnormal  = getAbnormalConfig(def, row.name);
                                 const val       = results[row.name]?.value ?? '';

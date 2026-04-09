@@ -8,19 +8,20 @@ export default function TestWings() {
     const [isEditing, setIsEditing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    useEffect(() => {
-        fetchWings();
-    }, []);
-
     const fetchWings = async () => {
         try {
             const res = await fetch('http://localhost:5000/api/wings');
             const data = await res.json();
-            if (data.success) setWings(data.wings);
+            if (data.success) setWings(data.data.wings);
         } catch (error) {
             console.error("Failed to fetch database records", error);
         }
     };
+
+    useEffect(() => {
+        fetchWings();
+    }, []);
+
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -39,7 +40,7 @@ export default function TestWings() {
                 });
                 const data = await res.json();
                 if (data.success) {
-                    setWings([data.wing, ...wings]); // Immediately update UI with new database object
+                    setWings([data.data.wing, ...wings]); // Immediately update UI with new database object
                 } else {
                     alert(data.error);
                 }
@@ -170,7 +171,7 @@ export default function TestWings() {
                                             </td>
                                         </tr>
                                     ) : (
-                                        filteredWings.map((wing, index) => (
+                                        filteredWings.map((wing) => (
                                             <motion.tr 
                                                 key={wing._id || wing.id}
                                                 layout

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const abnormalIndicationSchema = new mongoose.Schema({
     low: { type: String, required: true },
@@ -7,4 +7,6 @@ const abnormalIndicationSchema = new mongoose.Schema({
     color: { type: String, default: '#DC2626' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('AbnormalIndication', abnormalIndicationSchema);
+
+// We check if the model exists before compiling it to prevent overwrite errors during hot-reloads
+export default mongoose.models.AbnormalIndication || mongoose.model('AbnormalIndication', abnormalIndicationSchema);

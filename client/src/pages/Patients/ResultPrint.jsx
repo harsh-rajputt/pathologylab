@@ -8,13 +8,13 @@ export default function ResultPrint() {
     const { patient, results } = location.state || {};
 
     const [letterPad, setLetterPad] = useState(true);
-    const [selectedTests, setSelectedTests] = useState([]);
+    const selectedTests = [];
     const [allTests, setAllTests] = useState([]);
 
     useEffect(() => {
         fetch('http://localhost:5000/api/tests')
             .then(r => r.json())
-            .then(data => { if (data.success) setAllTests(data.tests); })
+            .then(data => { if (data.success) setAllTests(data.data.tests); })
             .catch(err => console.error(err));
     }, []);
 
@@ -39,16 +39,6 @@ export default function ResultPrint() {
             return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) +
                 '/' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).toUpperCase();
         } catch { return dateStr; }
-    };
-
-    const toggleSelect = (testName) => {
-        setSelectedTests(prev =>
-            prev.includes(testName) ? prev.filter(t => t !== testName) : [...prev, testName]
-        );
-    };
-
-    const toggleAll = (e) => {
-        setSelectedTests(e.target.checked ? tests.map(t => t.name) : []);
     };
 
     const handlePrint = (testsToP) => {

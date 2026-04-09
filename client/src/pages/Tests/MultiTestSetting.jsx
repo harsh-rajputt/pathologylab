@@ -18,6 +18,7 @@ export default function MultiTestSetting() {
 
     useEffect(() => {
         fetchTests();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchTests = async () => {
@@ -27,7 +28,7 @@ export default function MultiTestSetting() {
             const data = await res.json();
             if (data.success) {
                 // Ensure all tests have a childTests array initialized to prevent null errors
-                const formattedTests = data.tests.map(t => ({
+                const formattedTests = data.data.tests.map(t => ({
                     ...t,
                     childTests: t.childTests || []
                 }));

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const referenceDoctorSchema = new mongoose.Schema({
     refByName: { type: String, required: true },
@@ -17,4 +17,6 @@ const referenceDoctorSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model('ReferenceDoctor', referenceDoctorSchema);
+
+// We check if the model exists before compiling it to prevent overwrite errors during hot-reloads
+export default mongoose.models.ReferenceDoctor || mongoose.model('ReferenceDoctor', referenceDoctorSchema);

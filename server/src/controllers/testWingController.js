@@ -1,30 +1,33 @@
-const TestWing = require('../models/TestWing');
+import TestWing from '../models/TestWing.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 
-exports.createWing = async (req, res) => {
+export const createWing = asyncHandler(async (req, res) => {
     try {
         const newWing = new TestWing({ name: req.body.name });
         await newWing.save(); // This literally saves the object into MongoDB!
-        res.status(201).json({ success: true, wing: newWing });
+        return res
+            .status(201)
+            .json(new ApiResponse(201, { wing: newWing }, "Wing created successfully"));
     } catch (error) {
-        res.status(400).json({ success: false, error: "Failed to create wing. Name might already exist or be invalid." });
+        throw new ApiError(400, "Failed to create wing. Name might already exist or be invalid.", [error.message]);
     }
-};
+});
 
-exports.getWings = async (req, res) => {
-    try {
-        // Find all documents in the TestWings collection, sort by descending creation time
-        const wings = await TestWing.find().sort({ createdAt: -1 });
-        res.status(200).json({ success: true, wings });
-    } catch (error) {
-        res.status(500).json({ success: false, error: 'Failed to fetch wings from database' });
-    }
-};
+export const getWings = asyncHandler(async (req, res) => {
+    const wings = await TestWing.find().sort({ createdAt: -1 });
+    return res
+        .status(200)
+        .json(new ApiResponse(200, { wings }, "Wings fetched successfully"));
+});
 
-exports.deleteWing = async (req, res) => {
-    try {
-        await TestWing.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, message: "Wing deleted successfully" });
-    } catch (error) {
-        res.status(400).json({ success: false, error: "Failed to delete wing" });
+export const deleteWing = asyncHandler(async (req, res) => {
+    const wing = await TestWing.findByIdAndDelete(req.params.id);
+    if (!wing) {
+        throw new ApiError(404, "Wing not found");
     }
-};
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Wing deleted successfully"));
+});

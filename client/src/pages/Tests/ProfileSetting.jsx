@@ -21,6 +21,7 @@ export default function ProfileSetting() {
     useEffect(() => {
         fetchTests();
         fetchDepartments();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchTests = async () => {
@@ -30,7 +31,7 @@ export default function ProfileSetting() {
             const data = await res.json();
             if (data.success) {
                 // Ensure all tests have a childTests array initialized to prevent null errors
-                const formattedTests = data.tests.map(t => ({
+                const formattedTests = data.data.tests.map(t => ({
                     ...t,
                     childTests: t.childTests || []
                 }));
@@ -48,8 +49,8 @@ export default function ProfileSetting() {
         try {
             const res = await fetch('http://localhost:5000/api/departments');
             const data = await res.json();
-            if (data.success && data.departments) {
-                setDepartments(data.departments);
+            if (data.success && data.data.departments) {
+                setDepartments(data.data.departments);
             }
         } catch (error) {
             console.error(error);

@@ -1,9 +1,9 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { createReference, getReferences, deleteReference } = require('../controllers/referenceDoctorController');
+import { createReference, getReferences, deleteReference  } from '../controllers/referenceDoctorController.js';
 
 router.post('/', createReference);
 router.get('/', getReferences);
 router.delete('/:id', deleteReference);
 
-module.exports = router;
+export default router;

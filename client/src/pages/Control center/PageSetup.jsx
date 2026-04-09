@@ -27,7 +27,6 @@ export default function PageSetup() {
         }
     });
 
-    const [activeTab, setActiveTab] = useState('all');
 
     useEffect(() => {
         const saved = localStorage.getItem('pageSettings');

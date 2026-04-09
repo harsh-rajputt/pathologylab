@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const testSchema = new mongoose.Schema({
     testName: { type: String, required: true, unique: true },
@@ -44,4 +44,6 @@ const testSchema = new mongoose.Schema({
     childTests: [{ type: String }]
 }, { timestamps: true });
 
-module.exports = mongoose.models.Test || mongoose.model('Test', testSchema);
+
+// We check if the model exists before compiling it to prevent overwrite errors during hot-reloads
+export default mongoose.models.Test || mongoose.model('Test', testSchema);

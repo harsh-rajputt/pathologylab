@@ -1,29 +1,27 @@
-const TestDepartment = require('../models/TestDepartment');
+import TestDepartment from '../models/TestDepartment.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 
-exports.createDepartment = async (req, res) => {
+export const createDepartment = asyncHandler(async (req, res) => {
     try {
         const newDept = new TestDepartment(req.body);
         await newDept.save();
-        res.status(201).json({ success: true, department: newDept });
+        return res.status(201).json(new ApiResponse(201, { department: newDept }, "Department created successfully"));
     } catch (error) {
-        res.status(400).json({ success: false, error: "Failed to create department. Name might already exist or be invalid." });
+        throw new ApiError(400, "Failed to create department. Name might already exist or be invalid.", [error.message]);
     }
-};
+});
 
-exports.getDepartments = async (req, res) => {
-    try {
-        const departments = await TestDepartment.find().sort({ orderNo: 1, createdAt: -1 });
-        res.status(200).json({ success: true, departments });
-    } catch (error) {
-        res.status(500).json({ success: false, error: 'Failed to fetch departments from database' });
-    }
-};
+export const getDepartments = asyncHandler(async (req, res) => {
+    const departments = await TestDepartment.find().sort({ orderNo: 1, createdAt: -1 });
+    return res.status(200).json(new ApiResponse(200, { departments }, "Departments fetched successfully"));
+});
 
-exports.deleteDepartment = async (req, res) => {
-    try {
-        await TestDepartment.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, message: "Department deleted successfully" });
-    } catch (error) {
-        res.status(400).json({ success: false, error: "Failed to delete department" });
+export const deleteDepartment = asyncHandler(async (req, res) => {
+    const dept = await TestDepartment.findByIdAndDelete(req.params.id);
+    if (!dept) {
+        throw new ApiError(404, "Department not found");
     }
-};
+    return res.status(200).json(new ApiResponse(200, {}, "Department deleted successfully"));
+});

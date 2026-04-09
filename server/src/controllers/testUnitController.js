@@ -1,39 +1,38 @@
-const TestUnit = require('../models/TestUnit');
+import TestUnit from '../models/TestUnit.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 
-exports.createUnit = async (req, res) => {
+export const createUnit = asyncHandler(async (req, res) => {
     try {
         const item = new TestUnit(req.body);
         await item.save();
-        res.status(201).json({ success: true, unit: item });
+        return res.status(201).json(new ApiResponse(201, { unit: item }, "Unit created successfully"));
     } catch (error) {
-        if(error.code === 11000) return res.status(400).json({ success: false, error: "Unit already exists" });
-        res.status(400).json({ success: false, error: "Failed to create unit" });
+        if(error.code === 11000) {
+            throw new ApiError(400, "Unit already exists");
+        }
+        throw new ApiError(400, "Failed to create unit", [error.message]);
     }
-};
+});
 
-exports.getUnits = async (req, res) => {
-    try {
-        const units = await TestUnit.find().sort({ createdAt: -1 });
-        res.status(200).json({ success: true, units });
-    } catch (error) {
-        res.status(500).json({ success: false, error: "Failed to fetch units" });
-    }
-};
+export const getUnits = asyncHandler(async (req, res) => {
+    const units = await TestUnit.find().sort({ createdAt: -1 });
+    return res.status(200).json(new ApiResponse(200, { units }, "Units fetched successfully"));
+});
 
-exports.updateUnit = async (req, res) => {
-    try {
-        const item = await TestUnit.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.status(200).json({ success: true, unit: item });
-    } catch (error) {
-        res.status(400).json({ success: false, error: "Failed to update unit" });
+export const updateUnit = asyncHandler(async (req, res) => {
+    const item = await TestUnit.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!item) {
+        throw new ApiError(404, "Unit not found");
     }
-};
+    return res.status(200).json(new ApiResponse(200, { unit: item }, "Unit updated successfully"));
+});
 
-exports.deleteUnit = async (req, res) => {
-    try {
-        await TestUnit.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true });
-    } catch (error) {
-        res.status(400).json({ success: false, error: "Failed to delete" });
+export const deleteUnit = asyncHandler(async (req, res) => {
+    const unit = await TestUnit.findByIdAndDelete(req.params.id);
+    if (!unit) {
+        throw new ApiError(404, "Unit not found");
     }
-};
+    return res.status(200).json(new ApiResponse(200, {}, "Unit deleted successfully"));
+});

@@ -1,6 +1,6 @@
-const request = require('supertest');
-const app = require('../app');
-const Patient = require('../src/models/Patient');
+import request from 'supertest';
+import app from '../app.js';
+import Patient from '../src/models/Patient.js';
 
 // Mock Patient model
 jest.mock('../src/models/Patient');

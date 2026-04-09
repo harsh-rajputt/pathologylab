@@ -10,18 +10,13 @@ export default function TestUnit() {
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Fetch initial units on mount
-    useEffect(() => {
-        fetchUnits();
-    }, []);
-
     const fetchUnits = async () => {
         setIsLoading(true);
         try {
             const res = await fetch('http://localhost:5000/api/test-units');
             const data = await res.json();
             if (data.success) {
-                setUnits(data.units);
+                setUnits(data.data.units);
             }
         } catch (error) {
             console.error("Failed to fetch test units:", error);
@@ -30,6 +25,12 @@ export default function TestUnit() {
             setIsLoading(false);
         }
     };
+
+    // Fetch initial units on mount
+    useEffect(() => {
+        fetchUnits();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleSave = async (e) => {
         e.preventDefault();

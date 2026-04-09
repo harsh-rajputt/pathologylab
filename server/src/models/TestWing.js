@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const testWingSchema = new mongoose.Schema({
     name: {
@@ -15,5 +15,6 @@ const testWingSchema = new mongoose.Schema({
     timestamps: true // Automatically adds createdAt and updatedAt dates!
 });
 
+
 // We check if the model exists before compiling it to prevent overwrite errors during hot-reloads
-module.exports = mongoose.models.TestWing || mongoose.model('TestWing', testWingSchema);
+export default mongoose.models.TestWing || mongoose.model('TestWing', testWingSchema);

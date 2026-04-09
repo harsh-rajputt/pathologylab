@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const ageCategorySchema = new mongoose.Schema({
     name: {
@@ -27,4 +27,6 @@ const ageCategorySchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.models.AgeCategory || mongoose.model('AgeCategory', ageCategorySchema);
+
+// We check if the model exists before compiling it to prevent overwrite errors during hot-reloads
+export default mongoose.models.AgeCategory || mongoose.model('AgeCategory', ageCategorySchema);

@@ -1,6 +1,6 @@
-const request = require('supertest');
-const app = require('../app');
-const AgeCategory = require('../src/models/AgeCategory');
+import request from 'supertest';
+import app from '../app.js';
+import AgeCategory from '../src/models/AgeCategory.js';
 
 // Mock the Mongoose model
 jest.mock('../src/models/AgeCategory');

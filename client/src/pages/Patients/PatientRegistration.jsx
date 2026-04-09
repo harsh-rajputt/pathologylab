@@ -92,7 +92,7 @@ export default function PatientRegistration() {
         fetch('http://localhost:5000/api/tests')
             .then(r => r.json())
             .then(data => {
-                if (data.success) setAvailableTests(data.tests);
+                if (data.success) setAvailableTests(data.data.tests);
             })
             .catch(err => console.error('Failed to fetch tests:', err));
 
@@ -100,7 +100,7 @@ export default function PatientRegistration() {
         fetch('http://localhost:5000/api/references')
             .then(r => r.json())
             .then(data => {
-                if (data.success) setDoctors(data.references);
+                if (data.success) setDoctors(data.data.references);
             })
             .catch(err => console.error('Failed to fetch references:', err));
     }, []);
@@ -171,6 +171,7 @@ export default function PatientRegistration() {
         };
 
         if (!isEditMode) {
+            // eslint-disable-next-line react-hooks/purity
             payload.id = "LAB-" + Math.floor(10000 + Math.random() * 90000); // Random ID like LAB-12345
         }
 
@@ -186,7 +187,7 @@ export default function PatientRegistration() {
             const data = await res.json();
             
             if (data.success) {
-                console.log(isEditMode ? "Updated:" : "Registered:", data.patient);
+                console.log(isEditMode ? "Updated:" : "Registered:", data.data.patient);
                 setIsSubmitted(true);
                 setTimeout(() => setIsSubmitted(false), 3000);
                 

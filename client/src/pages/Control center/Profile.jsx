@@ -22,7 +22,6 @@ export default function Profile() {
 
     const headerInputRef = React.useRef(null);
     const footerInputRef = React.useRef(null);
-    const logoInputRef = React.useRef(null);
 
     const handleFileChange = (e, setUrl) => {
         const file = e.target.files[0];
@@ -59,7 +58,9 @@ export default function Profile() {
                 setStampUrl(p.stampUrl || null);
                 setHeaderUrl(p.headerUrl || null);
                 setFooterUrl(p.footerUrl || null);
-            } catch (err) {}
+            } catch (_err) {
+                console.warn('Could not parse stored lab profile:', _err);
+            }
         }
     }, []);
 
@@ -195,7 +196,7 @@ export default function Profile() {
                 <div className="flex flex-col md:flex-row bg-white">
                     {/* Left Sidebar Tabs */}
                     <div className="w-full md:w-64 border-r border-slate-200 bg-slate-50/30 flex flex-col pt-4 shrink-0">
-                        {['Personal info', 'Settings', 'Accounts and Tax', 'Receipt'].map((tab, idx) => (
+                        {['Personal info', 'Settings', 'Accounts and Tax', 'Receipt'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveSideTab(tab)}

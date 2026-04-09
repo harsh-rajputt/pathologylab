@@ -1,30 +1,23 @@
-const ReferenceDoctor = require('../models/ReferenceDoctor');
+import ReferenceDoctor from '../models/ReferenceDoctor.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiError } from '../utils/ApiError.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 
-exports.createReference = async (req, res) => {
-    try {
-        const reference = new ReferenceDoctor(req.body);
-        await reference.save();
-        res.status(201).json({ success: true, reference });
-    } catch (error) {
-        console.error("Error saving reference:", error);
-        res.status(400).json({ success: false, error: 'Failed to create reference' });
-    }
-};
+export const createReference = asyncHandler(async (req, res) => {
+    const reference = new ReferenceDoctor(req.body);
+    await reference.save();
+    return res.status(201).json(new ApiResponse(201, { reference }, "Reference created successfully"));
+});
 
-exports.getReferences = async (req, res) => {
-    try {
-        const references = await ReferenceDoctor.find().sort({ createdAt: -1 });
-        res.status(200).json({ success: true, references });
-    } catch (error) {
-        res.status(500).json({ success: false, error: 'Failed to fetch references' });
-    }
-};
+export const getReferences = asyncHandler(async (req, res) => {
+    const references = await ReferenceDoctor.find().sort({ createdAt: -1 });
+    return res.status(200).json(new ApiResponse(200, { references }, "References fetched successfully"));
+});
 
-exports.deleteReference = async (req, res) => {
-    try {
-        await ReferenceDoctor.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, message: 'Reference deleted properly' });
-    } catch (error) {
-        res.status(400).json({ success: false, error: 'Failed to delete reference' });
+export const deleteReference = asyncHandler(async (req, res) => {
+    const reference = await ReferenceDoctor.findByIdAndDelete(req.params.id);
+    if (!reference) {
+        throw new ApiError(404, "Reference not found");
     }
-};
+    return res.status(200).json(new ApiResponse(200, {}, "Reference deleted properly"));
+});

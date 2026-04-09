@@ -1,10 +1,10 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { createUnit, getUnits, updateUnit, deleteUnit } = require('../controllers/testUnitController');
+import { createUnit, getUnits, updateUnit, deleteUnit  } from '../controllers/testUnitController.js';
 
 router.post('/', createUnit);
 router.get('/', getUnits);
 router.put('/:id', updateUnit);
 router.delete('/:id', deleteUnit);
 
-module.exports = router;
+export default router;

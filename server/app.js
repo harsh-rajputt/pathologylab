@@ -1,21 +1,22 @@
-const express = require('express');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Import Express Routes
-const wingRoutes = require('./src/routes/testWingRoutes');
-const departmentRoutes = require('./src/routes/testDepartmentRoutes');
-const patientRoutes = require('./src/routes/patientRoutes');
-const testUnitRoutes = require('./src/routes/testUnitRoutes');
-const testRoutes = require('./src/routes/testRoutes');
-const referenceDoctorRoutes = require('./src/routes/referenceDoctorRoutes');
-const ageCategoryRoutes = require('./src/routes/ageCategoryRoutes');
-const abnormalIndicationRoutes = require('./src/routes/abnormalIndicationRoutes');
+import wingRoutes from './src/routes/testWingRoutes.js';
+import departmentRoutes from './src/routes/testDepartmentRoutes.js';
+import patientRoutes from './src/routes/patientRoutes.js';
+import testUnitRoutes from './src/routes/testUnitRoutes.js';
+import testRoutes from './src/routes/testRoutes.js';
+import referenceDoctorRoutes from './src/routes/referenceDoctorRoutes.js';
+import ageCategoryRoutes from './src/routes/ageCategoryRoutes.js';
+import abnormalIndicationRoutes from './src/routes/abnormalIndicationRoutes.js';
+import backupRoutes             from './src/routes/backupRoutes.js';
 
 // Basic Architecture Route
 app.get('/api/health', (req, res) => {
@@ -31,5 +32,6 @@ app.use('/api/tests', testRoutes);
 app.use('/api/references', referenceDoctorRoutes);
 app.use('/api/age-categories', ageCategoryRoutes);
 app.use('/api/abnormal-indications', abnormalIndicationRoutes);
+app.use('/api/backup',               backupRoutes);
 
-module.exports = app;
+export default app;

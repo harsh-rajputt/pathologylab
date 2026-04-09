@@ -1,9 +1,9 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { createDepartment, getDepartments, deleteDepartment } = require('../controllers/testDepartmentController');
+import { createDepartment, getDepartments, deleteDepartment  } from '../controllers/testDepartmentController.js';
 
 router.post('/', createDepartment);
 router.get('/', getDepartments);
 router.delete('/:id', deleteDepartment);
 
-module.exports = router;
+export default router;
