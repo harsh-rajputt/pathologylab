@@ -169,9 +169,17 @@ export default function PrintReport() {
             {/* Print-only styles */}
             <style>{`
                 @media print {
-                    @page { margin: 0; }
+                    @page { 
+                        size: A4; 
+                        margin: 0mm; 
+                    }
                     .no-print { display: none !important; }
                     body { margin: 0; padding: 0; background: #fff !important; }
+                    .page { 
+                        margin: 0 !important; 
+                        box-shadow: none !important;
+                        ${design.printBorder ? 'border: none !important;' : ''}
+                    }
                 }
                 body { font-family: '${design.fontFamily}', sans-serif; background: #e5e7eb; }
             `}</style>
@@ -195,14 +203,15 @@ export default function PrintReport() {
             {/* A4 Report Page */}
             <div className="page" style={{
                 width: '210mm',
-                minHeight: '297mm',
+                minHeight: '296mm',
                 margin: '10px auto',
                 background: '#fff',
+                boxSizing: 'border-box',
                 boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
-                paddingTop: isLetterPad ? `${config.topMargin || 100}px` : `${config.headerHeight || 0}px`,
-                paddingLeft: `${config.leftMargin || 0}px`,
-                paddingRight: `${config.rightMargin || 0}px`,
-                paddingBottom: `${config.bottomMargin || 50}px`,
+                paddingTop: `0px`,
+                paddingLeft: `0px`,
+                paddingRight: `0px`,
+                paddingBottom: `0px`,
                 fontSize: `${design.fontSize}px`,
                 fontFamily: `'${design.fontFamily}', sans-serif`,
                 display: 'flex',
@@ -215,26 +224,26 @@ export default function PrintReport() {
                 {!isLetterPad && (
                     <>
                         {profile?.headerUrl ? (
-                            <div style={{ width: '100%', marginBottom: '15px' }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 }}>
                                 <img 
                                     src={profile.headerUrl} 
                                     alt="Letterhead" 
                                     style={{ 
                                         width: '100%', 
-                                        display: 'block',
-                                        objectFit: 'contain'
+                                        height: 'auto',
+                                        display: 'block'
                                     }} 
                                 />
                             </div>
                         ) : (
                             <div style={{ 
+                                position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10,
                                 padding: '30px 40px 15px', 
                                 display: 'flex', 
                                 justifyContent: 'space-between', 
                                 alignItems: 'center',
                                 borderBottom: '2.5px solid #000',
-                                marginBottom: '15px',
-                                margin: '0 40px'
+                                backgroundColor: '#fff'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                                     {profile?.logoUrl && (
@@ -251,6 +260,15 @@ export default function PrintReport() {
                     </>
                 )}
 
+                <div style={{
+                    paddingTop: `${config.topMargin ?? config.headerHeight ?? (isLetterPad ? 100 : 20)}px`,
+                    paddingLeft: `${config.leftMargin || 0}px`,
+                    paddingRight: `${config.rightMargin || 0}px`,
+                    paddingBottom: `${config.bottomMargin || 50}px`,
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
                 {/* ── PATIENT INFO TRADITIONAL ── */}
                 <div style={{ padding: '0 40px 15px' }}>
                     <div style={{ 
@@ -294,9 +312,9 @@ export default function PrintReport() {
                         <thead>
                             <tr style={{ borderTop: '2.5px solid #000', borderBottom: '1.5px solid #000' }}>
                                 <th style={{ padding: '8px 5px', textAlign: 'left', fontWeight: 'bold', width: '40%' }}>{design.testHeading}</th>
-                                <th style={{ padding: '8px 5px', textAlign: 'center', fontWeight: 'bold', width: '20%' }}>{design.findingHeader}</th>
-                                <th style={{ padding: '8px 5px', textAlign: 'left', fontWeight: 'bold', width: '20%' }}>{design.unitHeader}</th>
-                                <th style={{ padding: '8px 5px', textAlign: 'left', fontWeight: 'bold', width: '20%' }}>{design.rangeHeader}</th>
+                                <th style={{ padding: '8px 5px', textAlign: design.findingAlign?.toLowerCase() || 'center', fontWeight: 'bold', width: '20%' }}>{design.findingHeader}</th>
+                                <th style={{ padding: '8px 5px', textAlign: design.unitAlign?.toLowerCase() || 'left', fontWeight: 'bold', width: '20%' }}>{design.unitHeader}</th>
+                                <th style={{ padding: '8px 5px', textAlign: design.rangeAlign?.toLowerCase() || 'left', fontWeight: 'bold', width: '20%' }}>{design.rangeHeader}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -427,11 +445,16 @@ export default function PrintReport() {
                         </tbody>
                     </table>
                 </div>
+                </div>
 
                 {/* ── FOOTER / DISCLAIMER ── */}
                 {!isLetterPad && (config.showFooter1 || config.endOfReport) && (
                     <div style={{ 
-                        marginTop: '30px', 
+                        position: 'absolute',
+                        bottom: 0, left: 0, right: 0,
+                        width: '100%',
+                        zIndex: 10,
+                        backgroundColor: '#fff',
                         pageBreakInside: 'avoid',
                         breakInside: 'avoid'
                     }}>
@@ -440,7 +463,7 @@ export default function PrintReport() {
                                 <img 
                                     src={profile.footerUrl} 
                                     alt="Footer Banner" 
-                                    style={{ width: '100%', display: 'block', objectFit: 'contain' }} 
+                                    style={{ width: '100%', height: 'auto', display: 'block' }} 
                                 />
                             </div>
                         ) : (

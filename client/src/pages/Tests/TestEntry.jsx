@@ -150,10 +150,21 @@ export default function TestEntry() {
         try {
             const payload = {
                 ...formData,
+                rate: Number(formData.rate) || 0,
+                discount: Number(formData.discount) || 0,
+                offerRate: Number(formData.offerRate) || 0,
                 ageGroups: ageGroups
             };
 
-            const endpoint = isEditMode ? `http://localhost:5000/api/tests/${formData._id}` : 'http://localhost:5000/api/tests';
+            // Remove unmodifiable database properties to prevent Mongoose error
+            delete payload._id;
+            delete payload.id;
+            delete payload.__v;
+            delete payload.createdAt;
+            delete payload.updatedAt;
+
+            const testIdToUpdate = formData._id || formData.id || location.state?.test?._id || location.state?.test?.id;
+            const endpoint = isEditMode ? `http://localhost:5000/api/tests/${testIdToUpdate}` : 'http://localhost:5000/api/tests';
             const method = isEditMode ? 'PUT' : 'POST';
 
             const res = await fetch(endpoint, {

@@ -10,19 +10,21 @@ export default function PageSetup() {
             patientBoxed: true, pageNumber: true,
             resultEndLine: false, removeTime: true,
             symbol: true, testBottomLine: true,
-            endOfReport: true,
+            endOfReport: true, signatureLayout: '3 Signature',
             signatures: { left: true, mid: false, right: false, fourth: false },
+            texts: { left: false, mid: false, right: false, fourth: false },
             heights: { left: 85, mid: 85, right: 85, fourth: 40 }
         },
         a4Page: {
-            headerHeight: 134, leftMargin: 10, rightMargin: 10, bottomMargin: 100,
+            topMargin: 20, leftMargin: 10, rightMargin: 10, bottomMargin: 100,
             patientFormat: 'Format19', overlap: 134,
             showFooter1: true, showFooter2: false,
             patientBoxed: true, pageNumber: true,
             resultEndLine: true, removeTime: false,
             symbol: true, testBottomLine: true,
-            endOfReport: true,
+            endOfReport: true, signatureLayout: '3 Signature',
             signatures: { left: true, mid: false, right: false, fourth: false },
+            texts: { left: false, mid: false, right: false, fourth: false },
             heights: { left: 60, mid: 60, right: 60, fourth: 50 }
         }
     });
@@ -147,6 +149,7 @@ export default function PageSetup() {
                                 />
                             </div>
 
+
                             {/* Toggles Row 1 */}
                             <div className="col-span-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 py-4 border-y border-slate-100 mt-2">
                                 {[
@@ -170,8 +173,24 @@ export default function PageSetup() {
                                         <span className="text-xs font-semibold group-hover:text-rose-600 transition-colors uppercase">{item.label}</span>
                                     </label>
                                 ))}
+                                
+                                <div className="flex items-center gap-3 lg:col-span-3 col-span-2 mt-1">
+                                    <span className="text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Sign Layout:</span>
+                                    <select 
+                                        value={settings.letterPad.signatureLayout || '3 Signature'}
+                                        onChange={(e) => updateSetting('letterPad', 'signatureLayout', e.target.value)}
+                                        className="w-full px-2 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-rose-500 outline-none bg-white text-xs font-bold text-rose-600"
+                                    >
+                                        <option>3 Signature</option>
+                                        <option>4 Signature</option>
+                                        <option>3 Signature Qrcode</option>
+                                        <option>Qrcode 3 Signature</option>
+                                        <option>SignQrSign</option>
+                                        <option>LQRF</option>
+                                    </select>
+                                </div>
                             </div>
-
+                            
                             {/* Signatures */}
                             <div className="col-span-full grid grid-cols-4 gap-4 mt-2">
                                 {['Left', 'Mid', 'Right', 'Fourth'].map(k => (
@@ -194,6 +213,15 @@ export default function PageSetup() {
                                                 className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none" 
                                             />
                                         </div>
+                                        <label className="flex items-center gap-3 cursor-pointer pt-2 mt-2 border-t border-slate-200">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={settings.letterPad.texts?.[k.toLowerCase()] || false}
+                                                onChange={(e) => updateNested('letterPad', 'texts', k.toLowerCase(), e.target.checked)}
+                                                className="w-4 h-4 rounded accent-rose-500" 
+                                            />
+                                            <span className="text-xs font-bold uppercase">{k} Text</span>
+                                        </label>
                                     </div>
                                 ))}
                             </div>
@@ -220,11 +248,11 @@ export default function PageSetup() {
                     <div className="p-8">
                         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Header Height</label>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">Top Margin</label>
                                 <input 
                                     type="number" 
-                                    value={settings.a4Page.headerHeight}
-                                    onChange={(e) => updateSetting('a4Page', 'headerHeight', e.target.value)}
+                                    value={settings.a4Page.topMargin}
+                                    onChange={(e) => updateSetting('a4Page', 'topMargin', e.target.value)}
                                     className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none px-3" 
                                 />
                             </div>
@@ -277,6 +305,7 @@ export default function PageSetup() {
                                 />
                             </div>
 
+
                             {/* Toggles */}
                             <div className="col-span-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 py-4 border-y border-slate-100 mt-2">
                                 {[
@@ -300,6 +329,22 @@ export default function PageSetup() {
                                         <span className="text-xs font-semibold group-hover:text-emerald-600 transition-colors uppercase">{item.label}</span>
                                     </label>
                                 ))}
+                                
+                                <div className="flex items-center gap-3 lg:col-span-3 col-span-2 mt-1">
+                                    <span className="text-xs font-semibold text-slate-700 uppercase whitespace-nowrap">Sign Layout:</span>
+                                    <select 
+                                        value={settings.a4Page.signatureLayout || '3 Signature'}
+                                        onChange={(e) => updateSetting('a4Page', 'signatureLayout', e.target.value)}
+                                        className="w-full px-2 py-1.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-xs font-bold text-emerald-600"
+                                    >
+                                        <option>3 Signature</option>
+                                        <option>4 Signature</option>
+                                        <option>3 Signature Qrcode</option>
+                                        <option>Qrcode 3 Signature</option>
+                                        <option>SignQrSign</option>
+                                        <option>LQRF</option>
+                                    </select>
+                                </div>
                             </div>
 
                             {/* Signatures */}
@@ -324,6 +369,15 @@ export default function PageSetup() {
                                                 className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg outline-none" 
                                             />
                                         </div>
+                                        <label className="flex items-center gap-3 cursor-pointer pt-2 mt-2 border-t border-slate-200">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={settings.a4Page.texts?.[k.toLowerCase()] || false}
+                                                onChange={(e) => updateNested('a4Page', 'texts', k.toLowerCase(), e.target.checked)}
+                                                className="w-4 h-4 rounded accent-emerald-500" 
+                                            />
+                                            <span className="text-xs font-bold uppercase">{k} Text</span>
+                                        </label>
                                     </div>
                                 ))}
                             </div>

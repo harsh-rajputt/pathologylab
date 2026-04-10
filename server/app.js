@@ -34,4 +34,14 @@ app.use('/api/age-categories', ageCategoryRoutes);
 app.use('/api/abnormal-indications', abnormalIndicationRoutes);
 app.use('/api/backup',               backupRoutes);
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(err.statusCode || 500).json({
+        success: false,
+        error: err.message || 'Internal Server Error',
+        details: err.errors || null
+    });
+});
+
 export default app;
