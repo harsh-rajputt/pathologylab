@@ -17,6 +17,7 @@ import referenceDoctorRoutes from './src/routes/referenceDoctorRoutes.js';
 import ageCategoryRoutes from './src/routes/ageCategoryRoutes.js';
 import abnormalIndicationRoutes from './src/routes/abnormalIndicationRoutes.js';
 import backupRoutes             from './src/routes/backupRoutes.js';
+import licenseRoutes            from './src/routes/licenseRoutes.js';
 
 // Basic Architecture Route
 app.get('/api/health', (req, res) => {
@@ -33,6 +34,7 @@ app.use('/api/references', referenceDoctorRoutes);
 app.use('/api/age-categories', ageCategoryRoutes);
 app.use('/api/abnormal-indications', abnormalIndicationRoutes);
 app.use('/api/backup',               backupRoutes);
+app.use('/api/license',              licenseRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

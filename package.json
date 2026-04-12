@@ -1,0 +1,16 @@
+{
+  "name": "pathologylab",
+  "version": "1.0.0",
+  "description": "Harsh Diagnostic Services Pathology Software",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harsh-rajputt/pathologylab.git"
+  },
+  "keywords": [],
+  "author": "Harsh Diagnostic Services",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/harsh-rajputt/pathologylab/issues"
+  },
+  "homepage": "https://github.com/harsh-rajputt/pathologylab#readme"
+}

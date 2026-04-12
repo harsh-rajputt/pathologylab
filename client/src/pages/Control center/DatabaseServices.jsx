@@ -4,7 +4,7 @@ import {
     DatabaseZap, ShieldCheck, RefreshCw,
     AlertTriangle, CheckCircle2, XCircle, Users, FlaskConical,
     Building2, Ruler, Tag, UserPlus, Calendar, FileJson,
-    Clock, HardDrive, CloudDownload, CloudUpload, Info, X, Lock, Key, Upload, Download
+    Clock, HardDrive, CloudDownload, CloudUpload, Info, X, Lock, Key, Upload, Download, CreditCard
 } from 'lucide-react';
 
 const API = 'http://localhost:5000/api/backup';
@@ -131,6 +131,48 @@ export default function DatabaseServices() {
 
     const fileInputRef = useRef(null);
 
+    // ── License Management ───────────────────────────────────────────────────
+    const [licenseInfo, setLicenseInfo]         = useState(null);
+    const [loadingLicense, setLoadingLicense]   = useState(true);
+    const [activationKey, setActivationKey]     = useState('');
+    const [activationStatus, setActivationStatus] = useState(null);
+    const [activationMsg, setActivationMsg]     = useState('');
+
+    const fetchLicenseInfo = async () => {
+        setLoadingLicense(true);
+        try {
+            const res = await fetch(`http://localhost:5000/api/license/status`);
+            const data = await res.json();
+            setLicenseInfo(data);
+        } catch (err) {
+            console.error('Failed to fetch license', err);
+        }
+        setLoadingLicense(false);
+    };
+
+    const handleActivateLicense = async () => {
+        if (!activationKey.trim()) return;
+        setActivationStatus('loading');
+        try {
+            const res = await fetch(`http://localhost:5000/api/license/activate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: activationKey.trim() })
+            });
+            const data = await res.json();
+            setActivationStatus(data.success ? 'success' : 'error');
+            setActivationMsg(data.message);
+            if (data.success) {
+                setActivationKey('');
+                fetchLicenseInfo();
+            }
+        } catch (err) {
+            setActivationStatus('error');
+            setActivationMsg('Could not connect to server.');
+        }
+        setTimeout(() => setActivationStatus(null), 5000);
+    };
+
     // ── fetch live DB stats ──────────────────────────────────────────────────
     const fetchInfo = async () => {
         setLoadingInfo(true);
@@ -145,7 +187,7 @@ export default function DatabaseServices() {
         }
     };
 
-    useEffect(() => { fetchInfo(); }, []);
+    useEffect(() => { fetchInfo(); fetchLicenseInfo(); }, []);
 
     // ── Backup (download) ────────────────────────────────────────────────────
     const handleBackup = async () => {
@@ -397,6 +439,75 @@ export default function DatabaseServices() {
 
                 {/* ── RIGHT: Actions column ────────────────────────────────── */}
                 <div className="flex flex-col gap-6">
+
+                    {/* LICENSE card */}
+                    <motion.div
+                        className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 overflow-hidden"
+                        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4, delay: 0.08 }}
+                    >
+                        <div className="bg-slate-900 px-5 py-4 text-white flex items-center gap-2">
+                            <CreditCard size={20} className="text-amber-400" strokeWidth={2.5} />
+                            <h2 className="text-lg font-bold">Software License (AMC)</h2>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            {loadingLicense ? (
+                                <div className="animate-pulse flex space-x-4">
+                                    <div className="h-10 bg-slate-200 rounded w-full"></div>
+                                </div>
+                            ) : (
+                                <div>
+                                    <div className={`p-3 rounded-xl border mb-4 flex items-start gap-3 ${licenseInfo?.status === 'locked' ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+                                        {licenseInfo?.status === 'locked' ? <AlertTriangle size={18} className="mt-0.5 text-rose-600" /> : <ShieldCheck size={18} className="mt-0.5 text-emerald-600" />}
+                                        <div>
+                                            <p className="text-sm font-bold">{licenseInfo?.message}</p>
+                                            <div className="flex gap-4 mt-2 text-xs font-semibold opacity-80">
+                                                <span>Tier: {licenseInfo?.type || 'N/A'}</span>
+                                                <span>Limit: {licenseInfo?.limits?.maxPatients >= 999999 ? 'Unlimited' : licenseInfo?.limits?.maxPatients} Pts</span>
+                                                <span>Expiry: {licenseInfo?.limits?.validUntil ? new Date(licenseInfo?.limits?.validUntil).toLocaleDateString() : 'Never'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Apply Product Key</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                                    placeholder="Paste License JWT Key here..."
+                                    value={activationKey}
+                                    onChange={e => setActivationKey(e.target.value)}
+                                />
+                            </div>
+
+                            <button
+                                onClick={handleActivateLicense}
+                                disabled={activationStatus === 'loading' || !activationKey.trim()}
+                                className="w-full py-3 bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 text-white font-bold rounded-xl shadow transition-all flex items-center justify-center gap-2 text-sm"
+                            >
+                                {activationStatus === 'loading' ? (
+                                    <><RefreshCw size={16} className="animate-spin" /> VerifyingKey…</>
+                                ) : (
+                                    <><Key size={16} /> Activate License</>
+                                )}
+                            </button>
+
+                            <AnimatePresence>
+                                {activationStatus === 'success' && (
+                                    <motion.div className="flex items-center gap-2 text-sm font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-3" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                                        <CheckCircle2 size={16} /> {activationMsg}
+                                    </motion.div>
+                                )}
+                                {activationStatus === 'error' && (
+                                    <motion.div className="flex items-center gap-2 text-sm font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-3" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                                        <XCircle size={16} /> {activationMsg}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    </motion.div>
 
                     {/* BACKUP card */}
                     <motion.div

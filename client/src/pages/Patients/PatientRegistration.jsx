@@ -5,7 +5,7 @@ import {
     User, Calendar, Clock, Activity, FileText, 
     UserPlus, Trash2, Syringe, Stethoscope, 
     Save, PlusCircle, CheckCircle2, Phone,
-    Wallet, CreditCard, LayoutList, RefreshCcw, HandCoins
+    Wallet, CreditCard, LayoutList, RefreshCcw, HandCoins, Lock
 } from 'lucide-react';
 
 
@@ -103,7 +103,16 @@ export default function PatientRegistration() {
                 if (data.success) setDoctors(data.data.references);
             })
             .catch(err => console.error('Failed to fetch references:', err));
+
+        // Fetch License Status
+        fetch('http://localhost:5000/api/license/status')
+            .then(r => r.json())
+            .then(data => setLicenseInfo(data))
+            .catch(err => console.error('Failed to fetch license', err));
+
     }, []);
+
+    const [licenseInfo, setLicenseInfo] = useState({ status: 'loading' });
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -216,6 +225,27 @@ export default function PatientRegistration() {
         hidden: { opacity: 0, y: 15 },
         visible: { opacity: 1, y: 0 }
     };
+
+    if (licenseInfo.status === 'locked') {
+        return (
+            <div className="min-h-screen bg-slate-50/50 flex flex-col items-center justify-center p-6 font-sans">
+                <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="max-w-md w-full bg-white rounded-3xl shadow-xl shadow-rose-200/50 border border-rose-100 p-8 text-center relative overflow-hidden">
+                    <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-rose-500 to-pink-500"></div>
+                    <div className="w-20 h-20 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mt-2 mb-6 border border-rose-100 shadow-inner">
+                        <Lock size={36} strokeWidth={2.5} />
+                    </div>
+                    <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-3">Registration Disabled</h2>
+                    <p className="text-rose-600 font-bold bg-rose-50 border border-rose-100 rounded-xl p-4 text-sm leading-relaxed mb-8">
+                        {licenseInfo.message}
+                    </p>
+                    <button onClick={() => navigate('/control-center')} className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2">
+                        <CreditCard size={18} /> Manage Software License
+                    </button>
+                    <p className="text-xs text-slate-400 font-medium mt-6">Contact your software provider for support or renewal.</p>
+                </motion.div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 lg:p-12">
