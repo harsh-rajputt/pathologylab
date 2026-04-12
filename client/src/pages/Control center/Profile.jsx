@@ -195,21 +195,23 @@ export default function Profile() {
 
                 <div className="flex flex-col md:flex-row bg-white">
                     {/* Left Sidebar Tabs */}
-                    <div className="w-full md:w-64 border-r border-slate-200 bg-slate-50/30 flex flex-col pt-4 shrink-0">
-                        {['Personal info', 'Settings', 'Accounts and Tax', 'Receipt'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveSideTab(tab)}
-                                className={`text-left px-5 py-3 text-sm flex items-center gap-3 transition-colors ${activeSideTab === tab
-                                    ? 'bg-sky-500 text-white font-medium shadow-sm'
-                                    : 'text-slate-600 hover:bg-slate-100 font-medium'
-                                    }`}
-                            >
-                                <Settings size={16} className={activeSideTab === tab ? "opacity-100" : "opacity-40"} />
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
+                    {activeTopTab === 'Basic Information' && (
+                        <div className="w-full md:w-64 border-r border-slate-200 bg-slate-50/30 flex flex-col pt-4 shrink-0">
+                            {['Personal info', 'Settings', 'Accounts and Tax', 'Receipt'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveSideTab(tab)}
+                                    className={`text-left px-5 py-3 text-sm flex items-center gap-3 transition-colors ${activeSideTab === tab
+                                        ? 'bg-sky-500 text-white font-medium shadow-sm'
+                                        : 'text-slate-600 hover:bg-slate-100 font-medium'
+                                        }`}
+                                >
+                                    <Settings size={16} className={activeSideTab === tab ? "opacity-100" : "opacity-40"} />
+                                    {tab}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Main Content Area */}
                     <div className="flex-1 p-6 lg:p-8 overflow-x-hidden">
@@ -725,15 +727,19 @@ export default function Profile() {
                                                     </div>
                                                 </div>
                                                 {/* Font Stack */}
-                                                <div className="grid grid-cols-1 gap-1">
+                                                <div className="h-full flex flex-col justify-end">
                                                     <SelectField 
                                                         label="Report Font Family" 
+                                                        inputStyle={{ fontFamily: designData.fontFamily }}
                                                         options={[
                                                             'Outfit', 'Inter', 'Roboto', 'Microsoft Sans Serif', 'Arial', 
-                                                            'Times New Roman', 'Calibri', 'Verdana', 'Tahoma', 
-                                                            'Segoe UI', 'Georgia', 'Courier New', 'Trebuchet MS', 
+                                                            'Andalé Mono', 'Bookman', 'Calisto MT', 'Cambria', 'Candara', 
+                                                            'Century Gothic', 'Comic Sans MS', 'Consolas', 'Copperplate', 
+                                                            'Courier', 'Courier New', 'Didot', 'Garamond', 'Georgia', 
+                                                            'Goudy Old Style', 'Lucida Console', 'Lucida Sans', 'Times New Roman', 
+                                                            'Calibri', 'Verdana', 'Tahoma', 'Segoe UI', 'Trebuchet MS', 
                                                             'Helvetica', 'Open Sans', 'Lato'
-                                                        ]} 
+                                                        ].map(f => ({ label: f, value: f, style: { fontFamily: f } }))} 
                                                         value={designData.fontFamily}
                                                         onChange={(e) => handleDesignChange('fontFamily', e.target.value)}
                                                     />

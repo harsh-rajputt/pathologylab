@@ -369,49 +369,62 @@ export default function PrintReport() {
                                 const showContentAfter = isLastInGroup && groupDef?.showComment && groupDef?.content;
 
                                 const isBold = !row.isChild;
+                                
+                                const parsedGap = parseInt(design.gapBetween);
+                                const vGap = !isNaN(parsedGap) ? (parsedGap / 2) : 5;
 
                                 return (
                                     <React.Fragment key={`frag-${i}`}>
                                         <tr style={{ borderBottom: design.multiUnderline && !row.isChild ? '1px solid #eee' : 'none' }}>
                                             <td style={{
-                                                padding: '5px 8px',
+                                                padding: `${vGap}px 8px`,
                                                 fontWeight: isBold ? '800' : '500',
                                                 textTransform: 'uppercase',
-                                                color: '#1e293b'
+                                                color: '#1e293b',
+                                                lineHeight: '1.3'
                                             }}>
                                                 {row.name}
                                             </td>
-                                            <td style={{ padding: '5px 8px', textAlign: design.findingAlign.toLowerCase() }}>
-                                                <div style={{ 
-                                                    display: 'inline-flex', 
-                                                    alignItems: 'center', 
-                                                    gap: '8px',
-                                                    position: 'relative',
-                                                    paddingLeft: abnormal ? '15px' : '0'
-                                                }}>
-                                                    {abnormal && (
+                                            <td style={{ padding: `${vGap}px 8px`, textAlign: design.findingAlign.toLowerCase(), lineHeight: '1.3' }}>
+                                                {config.symbol ? (
+                                                    <div style={{ 
+                                                        display: 'inline-flex', 
+                                                        alignItems: 'center', 
+                                                        width: '90px'
+                                                    }}>
                                                         <span style={{ 
-                                                            position: 'absolute', 
-                                                            left: '-2px',
+                                                            width: '18px',
+                                                            flexShrink: 0,
                                                             fontWeight: '900', 
-                                                            color: abnormal.color,
-                                                            fontSize: '11px'
+                                                            color: abnormal ? abnormal.color : 'transparent',
+                                                            fontSize: '12px',
+                                                            textAlign: 'left'
                                                         }}>
-                                                            {abnormal.symbol}
+                                                            {abnormal ? abnormal.symbol : ''}
                                                         </span>
-                                                    )}
+                                                        <span style={{ 
+                                                            flex: 1,
+                                                            fontWeight: ((abnormal && design.highlightBold !== false) || isBold) ? '800' : '500',
+                                                            color: abnormal ? abnormal.color : '#1e293b',
+                                                            textAlign: design.findingAlign.toLowerCase() === 'center' ? 'left' : design.findingAlign.toLowerCase(),
+                                                            paddingLeft: '6px'
+                                                        }}>
+                                                            {val !== '' ? val : '-'}
+                                                        </span>
+                                                    </div>
+                                                ) : (
                                                     <span style={{ 
-                                                        fontWeight: (abnormal || isBold) ? '800' : '500',
+                                                        fontWeight: ((abnormal && design.highlightBold !== false) || isBold) ? '800' : '500',
                                                         color: abnormal ? abnormal.color : '#1e293b'
                                                     }}>
                                                         {val !== '' ? val : '-'}
                                                     </span>
-                                                </div>
+                                                )}
                                             </td>
-                                            <td style={{ padding: '4px 8px', textAlign: design.unitAlign.toLowerCase(), color: '#000' }}>
+                                            <td style={{ padding: `${vGap}px 8px`, textAlign: design.unitAlign.toLowerCase(), color: '#000', lineHeight: '1.3' }}>
                                                 {def?.unit || ''}
                                             </td>
-                                            <td style={{ padding: '4px 8px', textAlign: design.rangeAlign.toLowerCase(), color: '#000' }}>
+                                            <td style={{ padding: `${vGap}px 8px`, textAlign: design.rangeAlign.toLowerCase(), color: '#000', lineHeight: '1.3' }}>
                                                 {rangeTxt || ''}
                                             </td>
                                         </tr>
@@ -444,11 +457,24 @@ export default function PrintReport() {
                             )}
                         </tbody>
                     </table>
+                    
+                    {config.endOfReport && rows.length > 0 && (
+                        <div style={{ 
+                            textAlign: 'center', 
+                            fontWeight: 'bold', 
+                            fontSize: '13px', 
+                            marginTop: '25px', 
+                            marginBottom: '10px',
+                            color: '#000'
+                        }}>
+                            ---End Of The Report---
+                        </div>
+                    )}
                 </div>
                 </div>
 
                 {/* ── FOOTER / DISCLAIMER ── */}
-                {!isLetterPad && (config.showFooter1 || config.endOfReport) && (
+                {!isLetterPad && config.showFooter1 && profile?.footerUrl && (
                     <div style={{ 
                         position: 'absolute',
                         bottom: 0, left: 0, right: 0,
@@ -458,28 +484,13 @@ export default function PrintReport() {
                         pageBreakInside: 'avoid',
                         breakInside: 'avoid'
                     }}>
-                        {profile?.footerUrl && config.showFooter1 ? (
-                            <div style={{ width: '100%' }}>
-                                <img 
-                                    src={profile.footerUrl} 
-                                    alt="Footer Banner" 
-                                    style={{ width: '100%', height: 'auto', display: 'block' }} 
-                                />
-                            </div>
-                        ) : (
-                            config.endOfReport && (
-                                <div style={{
-                                    padding: '10px 40px 30px',
-                                    textAlign: 'center',
-                                    fontWeight: '900',
-                                    fontSize: '11px',
-                                    color: '#000'
-                                }}>
-                                    <div style={{ borderTop: '2px solid #000', marginBottom: '10px', margin: '0 40px' }}></div>
-                                    --- End Of The Report ---
-                                </div>
-                            )
-                        )}
+                        <div style={{ width: '100%' }}>
+                            <img 
+                                src={profile.footerUrl} 
+                                alt="Footer Banner" 
+                                style={{ width: '100%', height: 'auto', display: 'block' }} 
+                            />
+                        </div>
                     </div>
                 )}
 
