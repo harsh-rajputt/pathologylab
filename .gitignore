@@ -14,6 +14,8 @@ dist-ssr
 
 # Build Output
 release-builds/
+DELIVERY_PACKAGE/
+server/dist-obfuscated/
 
 # Editor directories and files
 .vscode/*

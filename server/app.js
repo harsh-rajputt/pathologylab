@@ -1,5 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
 const app = express();
 
@@ -45,5 +50,16 @@ app.use((err, req, res, next) => {
         details: err.errors || null
     });
 });
+
+// ── Production: Serve the compiled React app ─────────────────────────────────
+// This only activates when NODE_ENV=production (i.e. on a client machine).
+// In development, Vite still runs on port 5173 as normal.
+if (process.env.NODE_ENV === 'production') {
+    const distPath = path.join(__dirname, '..', 'client', 'dist');
+    app.use(express.static(distPath));
+    app.get(/(.*)/, (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+}
 
 export default app;

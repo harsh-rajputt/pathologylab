@@ -256,7 +256,7 @@ export default function ProfileSetting() {
                                                 {test.testFormat || 'Single'}
                                             </span>
                                             <button
-                                                onClick={() => navigate('/tests/entry', { state: { test } })}
+                                                onClick={() => navigate(`/tests/entry?id=${test._id || test.id}`, { state: { test } })}
                                                 className="text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 p-0.5 rounded transition-colors"
                                                 title="Edit Test"
                                             >
@@ -297,7 +297,7 @@ export default function ProfileSetting() {
                                             </span>
                                             <div className="flex items-center gap-1 shrink-0">
                                                 <button
-                                                    onClick={() => navigate('/tests/entry', { state: { test } })}
+                                                    onClick={() => navigate(`/tests/entry?id=${test._id || test.id}`, { state: { test } })}
                                                     className="text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 p-1 rounded transition-colors"
                                                     title="Edit Test"
                                                 >

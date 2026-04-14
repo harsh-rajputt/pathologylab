@@ -39,4 +39,4 @@ const patientSchema = new mongoose.Schema({
 
 
 // We check if the model exists before compiling it to prevent overwrite errors during hot-reloads
-export default mongoose.models.Patient || mongoose.model('Patient', testSchema);
+export default mongoose.models.Patient || mongoose.model('Patient', patientSchema);

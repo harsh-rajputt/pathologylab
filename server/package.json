@@ -20,6 +20,7 @@
     "mongoose": "^9.3.3"
   },
   "devDependencies": {
+    "javascript-obfuscator": "^5.4.1",
     "jest": "^30.3.0",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2"

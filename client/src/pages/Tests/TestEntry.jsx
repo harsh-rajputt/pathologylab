@@ -26,111 +26,84 @@ export default function TestEntry() {
     const [isAgeGroupModalOpen, setIsAgeGroupModalOpen] = useState(false);
     const [ageGroups, setAgeGroups] = useState([]);
 
-    useEffect(() => {
-        const fetchTestData = async (id) => {
-            try {
-                const res = await fetch(`http://localhost:5000/api/tests/${id}`);
-                const data = await res.json();
-                if (data.success && data.data.test) {
-                    const t = data.data.test;
-                    setFormData(prev => ({
-                        ...prev,
-                        ...t,
-                        testName: t.testName || t.name || '',
-                        testFormat: t.testFormat || t.format || 'Single',
-                        department: t.department || '',
-                        unit: t.unit || '',
-                        wing: t.wing || 'PATHOLOGY',
-                        rate: t.rate ?? 0,
-                        discount: t.discount ?? 0,
-                        offerRate: t.offerRate ?? 0,
-                        content: t.content || '',
-                        _id: t._id || t.id
-                    }));
-
-                    if (t.ageGroups && Array.isArray(t.ageGroups) && t.ageGroups.length > 0) {
-                        setAgeGroups(prev => {
-                            if (prev.length === 0) return t.ageGroups; // If metadata not loaded yet
-                            return prev.map(dbGroup => {
-                                const savedOverride = t.ageGroups.find(saved => saved.category === dbGroup.category);
-                                return savedOverride ? { ...dbGroup, lower: savedOverride.lower, higher: savedOverride.higher } : dbGroup;
-                            });
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to fetch test details", error);
-            }
-        };
-
-        if (location.state && location.state.test) {
-            const initialTest = location.state.test;
-            const testId = initialTest._id || initialTest.id;
-            
-            if (testId) {
-                fetchTestData(testId);
-            } else {
-                // Fallback for simple cases if ID is missing (should not happen normally)
-                setFormData(prev => ({ ...prev, ...initialTest }));
-            }
-        }
-    }, [location.state]);
-
-    const [unitOptions, setUnitOptions] = useState(["Select Unit"]);
-    const [wingOptions, setWingOptions] = useState(["PATHOLOGY", "RADIOLOGY", "ECG", "CT SCAN"]);
-    const [departmentOptions, setDepartmentOptions] = useState(["Select Department", "HAEMATOLOGY", "BIOCHEMESTRY"]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const fetchMetadata = async () => {
+        const initialize = async () => {
+            setIsLoading(true);
             try {
-                // Fetch Units
-                const resUnits = await fetch('http://localhost:5000/api/test-units');
-                const dataUnits = await resUnits.json();
-                if (dataUnits.success) {
-                    setUnitOptions(["Select Unit", ...dataUnits.units.map(u => u.name)]);
-                }
+                // 1. Fetch Metadata first
+                const [rUnits, rWings, rDepts, rAge] = await Promise.all([
+                    fetch('http://localhost:5000/api/test-units'),
+                    fetch('http://localhost:5000/api/wings'),
+                    fetch('http://localhost:5000/api/departments'),
+                    fetch('http://localhost:5000/api/age-categories')
+                ]);
 
-                // Fetch Wings
-                const resWings = await fetch('http://localhost:5000/api/wings');
-                const dataWings = await resWings.json();
-                if (dataWings.success && dataWings.wings?.length > 0) {
-                    setWingOptions(dataWings.wings.map(w => w.name));
-                }
+                const [dUnits, dWings, dDepts, dAge] = await Promise.all([
+                    rUnits.json(), rWings.json(), rDepts.json(), rAge.json()
+                ]);
 
-                // Fetch Departments
-                const resDepts = await fetch('http://localhost:5000/api/departments');
-                const dataDepts = await resDepts.json();
-                if (dataDepts.success && dataDepts.departments?.length > 0) {
-                    setDepartmentOptions(["Select Department", ...dataDepts.departments.map(d => d.name)]);
-                }
-
-                // Fetch Age Categories for Normal Range Matrix
-                const resAge = await fetch('http://localhost:5000/api/age-categories');
-                const dataAge = await resAge.json();
-                if (dataAge.success && dataAge.categories?.length > 0) {
-                    const mappedGroups = dataAge.categories.map((c, idx) => ({
+                if (dUnits.success) setUnitOptions(["Select Unit", ...dUnits.units.map(u => u.name)]);
+                if (dWings.success) setWingOptions(dWings.wings.map(w => w.name));
+                if (dDepts.success) setDepartmentOptions(["Select Department", ...dDepts.departments.map(d => d.name)]);
+                
+                let defaultAgeGroups = [];
+                if (dAge.success) {
+                    defaultAgeGroups = dAge.categories.map((c, idx) => ({
                         id: c._id || (idx + 1),
                         category: c.name,
                         normalRange: `${c.ageStart}-${c.ageEnd}`,
                         lower: '0',
                         higher: '0'
                     }));
+                }
+
+                // 2. Fetch or Populate Test Data
+                const queryParams = new URLSearchParams(location.search);
+                const queryId = queryParams.get('id');
+                const stateTest = location.state?.test;
+                const testId = queryId || stateTest?._id || stateTest?.id;
+
+                if (testId) {
+                    // Try to fetch latest from API if we have an ID
+                    const rTest = await fetch(`http://localhost:5000/api/tests/${testId}`);
+                    const dTest = await rTest.json();
                     
-                    // Carefully merge with existing test config if already loaded (edit mode edge case)
-                    setAgeGroups(prev => {
-                        return mappedGroups.map(dbGroup => {
-                            const existing = prev.find(p => p.category === dbGroup.category);
-                            return existing ? { ...dbGroup, lower: existing.lower, higher: existing.higher } : dbGroup;
-                        });
-                    });
+                    if (dTest.success && dTest.data?.test) {
+                        const t = dTest.data.test;
+                        setFormData(prev => ({
+                            ...prev,
+                            ...t,
+                            testName: t.testName || t.name || '',
+                            testFormat: t.testFormat || t.format || 'Single',
+                            _id: t._id || t.id
+                        }));
+
+                        if (t.ageGroups?.length > 0) {
+                            setAgeGroups(t.ageGroups);
+                        } else {
+                            setAgeGroups(defaultAgeGroups);
+                        }
+                    } else if (stateTest) {
+                        // Fallback to state if API failed but we have state
+                        setFormData(prev => ({ ...prev, ...stateTest, testName: stateTest.testName || stateTest.name || '' }));
+                        setAgeGroups(stateTest.ageGroups?.length > 0 ? stateTest.ageGroups : defaultAgeGroups);
+                    }
+                } else {
+                    // New Test mode
+                    setAgeGroups(defaultAgeGroups);
                 }
             } catch (error) {
-                console.error("Failed to fetch dynamic test metadata options", error);
+                console.error("Initialization failed:", error);
+            } finally {
+                setIsLoading(false);
             }
         };
-        fetchMetadata();
-         
-    }, []);
+
+        initialize();
+    }, [location.search, location.state]);
+
 
     const handleAgeGroupChange = (id, field, value) => {
         setAgeGroups(prev => prev.map(group => group.id === id ? { ...group, [field]: value } : group));
@@ -240,8 +213,15 @@ export default function TestEntry() {
                 </div>
 
                 <form onSubmit={handleSave} className="p-6 md:p-8">
-                    {/* Top 4-Column Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 mb-6">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                            <RefreshCw className="w-10 h-10 text-fuchsia-500 animate-spin" />
+                            <p className="text-slate-500 font-medium italic">Synchronizing clinical test parameters...</p>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Top 4-Column Grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-2 mb-6">
 
                         {/* Column 1 */}
                         <div>
@@ -352,6 +332,8 @@ export default function TestEntry() {
                         </button>
                     </div>
 
+                        </>
+                    )}
                 </form>
             </motion.div>
 

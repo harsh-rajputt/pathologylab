@@ -178,7 +178,7 @@ export default function TestList() {
                                         <td className="px-4 py-2.5">
                                             <div className="flex items-center gap-1">
                                                 <button 
-                                                    onClick={() => navigate('/tests/entry', { state: { test } })}
+                                                    onClick={() => navigate(`/tests/entry?id=${test._id || test.id}`, { state: { test } })}
                                                     className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
                                                     title="Edit Test"
                                                 >
