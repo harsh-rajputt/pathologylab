@@ -27,6 +27,9 @@ export default function TestEntry() {
     const [ageGroups, setAgeGroups] = useState([]);
 
     const [isLoading, setIsLoading] = useState(true);
+    const [unitOptions, setUnitOptions] = useState(["Select Unit"]);
+    const [wingOptions, setWingOptions] = useState(["PATHOLOGY", "RADIOLOGY", "ECG", "CT SCAN"]);
+    const [departmentOptions, setDepartmentOptions] = useState(["Select Department", "HAEMATOLOGY", "BIOCHEMESTRY"]);
 
     useEffect(() => {
         const initialize = async () => {
@@ -44,12 +47,12 @@ export default function TestEntry() {
                     rUnits.json(), rWings.json(), rDepts.json(), rAge.json()
                 ]);
 
-                if (dUnits.success) setUnitOptions(["Select Unit", ...dUnits.units.map(u => u.name)]);
-                if (dWings.success) setWingOptions(dWings.wings.map(w => w.name));
-                if (dDepts.success) setDepartmentOptions(["Select Department", ...dDepts.departments.map(d => d.name)]);
+                if (dUnits.success && Array.isArray(dUnits.units)) setUnitOptions(["Select Unit", ...dUnits.units.map(u => u.name)]);
+                if (dWings.success && Array.isArray(dWings.wings)) setWingOptions(dWings.wings.map(w => w.name));
+                if (dDepts.success && Array.isArray(dDepts.departments)) setDepartmentOptions(["Select Department", ...dDepts.departments.map(d => d.name)]);
                 
                 let defaultAgeGroups = [];
-                if (dAge.success) {
+                if (dAge.success && Array.isArray(dAge.categories)) {
                     defaultAgeGroups = dAge.categories.map((c, idx) => ({
                         id: c._id || (idx + 1),
                         category: c.name,
