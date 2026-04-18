@@ -20,7 +20,7 @@ export default function TestEntry() {
         content: '',
         showMethod: false, showComment: false, testNameBold: false, useCommentResult: false,
         resultBold: false, paragraphResult: false, pageBreak: false, showShortCode: false,
-        testId: '0', testCode: '', shortCode: ''
+        isCalculated: false, formula: '', testCode: '', shortCode: ''
     });
 
     const [isAgeGroupModalOpen, setIsAgeGroupModalOpen] = useState(false);
@@ -164,7 +164,7 @@ export default function TestEntry() {
                     content: '',
                     showMethod: false, showComment: false, testNameBold: false, useCommentResult: false,
                     resultBold: false, paragraphResult: false, pageBreak: false, showShortCode: false,
-                    testId: '0', testCode: '', shortCode: ''
+                    isCalculated: false, formula: '', testCode: '', shortCode: ''
                 });
                 setAgeGroups(prev => prev.map(group => ({ ...group, lower: '0', higher: '0' })));
             } else {
@@ -317,8 +317,13 @@ export default function TestEntry() {
 
                     {/* Bottom Row */}
                     <div className="flex flex-wrap items-end gap-5">
-                        <div className="w-32">
-                            <InputField label="Test ID" name="testId" type="number" value={formData.testId} onChange={handleChange} className="!mb-0" />
+                        <div className="w-48 pb-2">
+                            <Checkbox 
+                                label="Is Calculated?" 
+                                name="isCalculated" 
+                                checked={formData.isCalculated} 
+                                onChange={handleChange} 
+                            />
                         </div>
                         <div className="flex-1 min-w-[200px]">
                             <InputField label="Test Code" name="testCode" value={formData.testCode} onChange={handleChange} className="!mb-0" />
@@ -334,6 +339,27 @@ export default function TestEntry() {
                             {isEditMode ? "Update" : "Save"}
                         </button>
                     </div>
+
+                    {formData.isCalculated && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: -10 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            className="mt-6 p-4 rounded-xl border border-indigo-100 bg-indigo-50/50 shadow-sm"
+                        >
+                            <InputField 
+                                label="Formula Definition" 
+                                name="formula" 
+                                placeholder="e.g. [ALB] / [GLOB]" 
+                                value={formData.formula} 
+                                onChange={handleChange} 
+                                className="!mb-0"
+                            />
+                            <p className="text-[13px] text-indigo-600/80 mt-2.5 font-medium flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+                                Use exact Short Codes inside brackets exactly like: [SHORTCODE] + [SHORTCODE2]
+                            </p>
+                        </motion.div>
+                    )}
 
                         </>
                     )}

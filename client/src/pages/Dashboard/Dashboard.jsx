@@ -15,7 +15,13 @@ export default function Dashboard() {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/patients');
+                const res = await fetch(`http://localhost:5000/api/patients?t=${new Date().getTime()}`, {
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
                 const data = await res.json();
                 if (data.success) {
                     const patients = data.data.patients;
@@ -33,7 +39,7 @@ export default function Dashboard() {
                     const monthlyMap = {};
 
                     patients.forEach(p => {
-                        const date = new Date(p.createdAt);
+                        const date = p.reportingDate ? new Date(p.reportingDate) : new Date(p.createdAt);
                         const pMonth = date.getMonth();
                         const pYear = date.getFullYear();
 

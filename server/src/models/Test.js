@@ -31,7 +31,8 @@ const testSchema = new mongoose.Schema({
     paragraphResult: Boolean,
     pageBreak: Boolean,
     showShortCode: Boolean,
-    testId: String,
+    isCalculated: { type: Boolean, default: false },
+    formula: String,
     testCode: String,
     shortCode: String,
     ageGroups: [{
